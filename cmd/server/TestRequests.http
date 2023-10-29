@@ -1,0 +1,78 @@
+### GET server status
+GET {{host}}:{{port}}
+
+### Create a game
+POST {{host}}:{{port}}/game
+Content-Type: application/json
+
+{
+    "player1_name": "Dick Appel",
+    "public": true
+}
+> {%
+    client.global.set("game_key", response.body.key);
+ %}
+
+### Getting Game status
+GET {{host}}:{{port}}/game/{{game_key}}
+
+### Join Game
+POST {{host}}:{{port}}/game/{{game_key}}/join
+Content-Type: application/json
+
+{
+  "player2_name": "Sanae Himdi"
+}
+
+### List all public games
+GET {{host}}:{{port}}/game
+
+### Play a move
+POST {{host}}:{{port}}/game/{{game_key}}/play
+Content-Type: application/json
+
+{
+  "column": 1
+}
+### Play a move
+POST {{host}}:{{port}}/game/{{game_key}}/play
+Content-Type: application/json
+
+{
+  "column": 2
+}
+### Play a move
+POST {{host}}:{{port}}/game/{{game_key}}/play
+Content-Type: application/json
+
+{
+  "column": 1
+}
+### Play a move
+POST {{host}}:{{port}}/game/{{game_key}}/play
+Content-Type: application/json
+
+{
+  "column": 2
+}
+### Play a move
+POST {{host}}:{{port}}/game/{{game_key}}/play
+Content-Type: application/json
+
+{
+  "column": 1
+}
+### Play a move
+POST {{host}}:{{port}}/game/{{game_key}}/play
+Content-Type: application/json
+
+{
+  "column": 2
+}
+### Play the winning move
+POST {{host}}:{{port}}/game/{{game_key}}/play
+Content-Type: application/json
+
+{
+  "column": 1
+}

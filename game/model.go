@@ -1,10 +1,8 @@
-package main
+package game
 
 import (
-	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"os"
 	"strings"
 )
 
@@ -44,7 +42,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Reset the board
 		case "r":
-			m.board.reset()
+			m.board.Reset()
 			m.currentPlayer = RedDisc
 
 		// The "up" and "k" keys move the cursor up
@@ -62,7 +60,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// The "enter" key and the space-bar (a literal space) toggle
 		// the selected state for the item that the cursor is pointing at.
 		case "enter", " ":
-			if m.board.addDisc(m.selectedCol, m.currentPlayer) {
+			if m.board.AddDisc(m.selectedCol, m.currentPlayer) {
 				m.currentPlayer = m.getNextPlayer()
 				m.selectedCol = 0
 			}
@@ -98,7 +96,7 @@ func (m Model) View() string {
 		b.WriteString("\n")
 	}
 
-	if m.board.hasConnectFour() {
+	if m.board.HasConnectFour() {
 		b.WriteString("Connect four!\n")
 	}
 
@@ -110,27 +108,5 @@ func (m Model) renderDiscWithColor(disc Disc) string {
 	if disc == RedDisc {
 		s = m.redColor
 	}
-	return s.Render(string(disc.render()))
-}
-
-func (d Disc) render() byte {
-	switch d {
-	case NoDisc:
-		return ' '
-	case RedDisc:
-		return 'X'
-	case YellowDisc:
-		return 'O'
-	}
-	return '/'
-}
-
-func main() {
-
-	if err := tea.NewProgram(NewModel()).Start(); err != nil {
-		fmt.Println("Error running program:", err)
-		os.Exit(1)
-
-	}
-
+	return s.Render(string(disc.Render()))
 }

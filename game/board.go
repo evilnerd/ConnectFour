@@ -1,14 +1,6 @@
-package main
+package game
 
 import strings "strings"
-
-type Disc int
-
-const (
-	NoDisc = iota
-	RedDisc
-	YellowDisc
-)
 
 const (
 	BoardWidth  = 7
@@ -38,7 +30,7 @@ func (b *Board) setCell(row int, col int, d Disc) {
 	b.cells[b.cellIndex(row, col)] = d
 }
 
-func (b *Board) addDisc(col int, disc Disc) bool {
+func (b *Board) AddDisc(col int, disc Disc) bool {
 	for row := BoardHeight - 1; row >= 0; row-- {
 		if b.getCell(row, col) == NoDisc {
 			b.setCell(row, col, disc)
@@ -48,11 +40,11 @@ func (b *Board) addDisc(col int, disc Disc) bool {
 	return false
 }
 
-func (b *Board) reset() {
+func (b *Board) Reset() {
 	b.cells = [BoardWidth * BoardHeight]Disc{}
 }
 
-func (b *Board) hasConnectFour() bool {
+func (b *Board) HasConnectFour() bool {
 	// horizontal
 	for row := 0; row < BoardHeight; row++ {
 		for col := 0; col < BoardWidth-3; col++ {
@@ -113,10 +105,22 @@ func (b *Board) String() string {
 	for row := 0; row < BoardHeight; row++ {
 		sb.WriteString("|")
 		for col := 0; col < BoardWidth; col++ {
-			sb.WriteByte(b.getCell(row, col).render())
+			sb.WriteByte(b.getCell(row, col).Render())
 			sb.WriteString("|")
 		}
 		sb.WriteString("\n")
 	}
 	return sb.String()
+}
+
+func (b *Board) Map() map[int]string {
+	output := make(map[int]string)
+	for row := 0; row < BoardHeight; row++ {
+		sb := strings.Builder{}
+		for col := 0; col < BoardWidth; col++ {
+			sb.WriteByte(b.getCell(row, col).Render())
+		}
+		output[row+1] = sb.String()
+	}
+	return output
 }
