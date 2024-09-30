@@ -1,33 +1,34 @@
-package game
+package client
 
 import (
+	"connectfour/game"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"strings"
 )
 
-type Model struct {
-	board         Board
-	currentPlayer Disc
+type GameModel struct {
+	board         game.Board
+	currentPlayer game.Disc
 	selectedCol   int
 	redColor      lipgloss.Style
 	yellowColor   lipgloss.Style
 }
 
-func NewModel() Model {
-	m := Model{}
-	m.currentPlayer = RedDisc
+func NewGameModel() GameModel {
+	m := GameModel{}
+	m.currentPlayer = game.RedDisc
 	m.redColor = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000"))
 	m.yellowColor = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFF00"))
 
 	return m
 }
 
-func (m Model) Init() tea.Cmd {
+func (m GameModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m GameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	// Is it a key press?
@@ -43,17 +44,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Reset the board
 		case "r":
 			m.board.Reset()
-			m.currentPlayer = RedDisc
+			m.currentPlayer = game.RedDisc
 
-		// The "up" and "k" keys move the cursor up
+		// control which column to drop in
 		case "left", "j":
 			if m.selectedCol > 0 {
 				m.selectedCol--
 			}
 
-		// The "down" and "j" keys move the cursor down
 		case "right", "l":
-			if m.selectedCol < BoardWidth-1 {
+			if m.selectedCol < game.BoardWidth-1 {
 				m.selectedCol++
 			}
 
@@ -72,14 +72,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) getNextPlayer() Disc {
-	if m.currentPlayer == RedDisc {
-		return YellowDisc
+func (m GameModel) getNextPlayer() game.Disc {
+	if m.currentPlayer == game.RedDisc {
+		return game.YellowDisc
 	}
-	return RedDisc
+	return game.RedDisc
 }
 
-func (m Model) View() string {
+func (m GameModel) View() string {
 
 	grey := lipgloss.NewStyle().Foreground(lipgloss.Color("#BBBBBB"))
 	b := strings.Builder{}
@@ -87,10 +87,10 @@ func (m Model) View() string {
 	b.WriteString(strings.Repeat(" ", (m.selectedCol*2)+1))
 	b.WriteString(m.renderDiscWithColor(m.currentPlayer))
 	b.WriteByte('\n')
-	for row := 0; row < BoardHeight; row++ {
+	for row := 0; row < game.BoardHeight; row++ {
 		b.WriteString(grey.Render("|"))
-		for col := 0; col < BoardWidth; col++ {
-			b.WriteString(m.renderDiscWithColor(m.board.getCell(row, col)))
+		for col := 0; col < game.BoardWidth; col++ {
+			b.WriteString(m.renderDiscWithColor(m.board.Cell(row, col)))
 			b.WriteString(grey.Render("|"))
 		}
 		b.WriteString("\n")
@@ -103,9 +103,9 @@ func (m Model) View() string {
 	return b.String()
 }
 
-func (m Model) renderDiscWithColor(disc Disc) string {
+func (m GameModel) renderDiscWithColor(disc game.Disc) string {
 	s := m.yellowColor
-	if disc == RedDisc {
+	if disc == game.RedDisc {
 		s = m.redColor
 	}
 	return s.Render(string(disc.Render()))

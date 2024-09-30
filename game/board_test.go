@@ -12,6 +12,21 @@ func getTestBoard() Board {
 	}
 }
 
+func TestBoard_Map_FromMap_ReturnsSameBoard(t *testing.T) {
+	// Arrange
+	b := getTestBoard()
+	b.AddDisc(1, YellowDisc)
+	b.AddDisc(3, RedDisc)
+	b.AddDisc(1, YellowDisc)
+
+	// Act
+	mapped := b.Map()
+	unmapped := FromMap(mapped)
+
+	// Assert
+	assert.ElementsMatchf(t, b.cells, unmapped.cells, "Expected the cells of the unmapped board to match the original")
+}
+
 func TestBoard_hasConnectFour_ReturnsFalseForEmptyBoard(t *testing.T) {
 	// Arrange
 	b := getTestBoard()

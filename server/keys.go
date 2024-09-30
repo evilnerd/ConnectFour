@@ -22,7 +22,7 @@ func GenerateKey(numberOfWords int) string {
 		i := rand.Intn(wordListSize - 1)
 		output[w] = wordList[i]
 	}
-	return strings.Join(output, " ")
+	return strings.Join(output, "-")
 }
 
 var words = `aa ab ad ae ag ah ai al am an ar as at aw ax ay ba be bi bo by de do ed

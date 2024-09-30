@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func marshal(obj interface{}, response http.ResponseWriter) bool {
@@ -15,7 +17,7 @@ func marshal(obj interface{}, response http.ResponseWriter) bool {
 
 func unmarshal[T interface{}](response http.ResponseWriter, request *http.Request) (T, bool) {
 	var req T
-
+	log.Debugf("Unmarshalling request to %s", request.RequestURI)
 	decoder := json.NewDecoder(request.Body)
 	decoder.DisallowUnknownFields()
 	err := decoder.Decode(&req)
@@ -40,6 +42,8 @@ func handleError(err error, response http.ResponseWriter) bool {
 }
 
 func errorResponse(w http.ResponseWriter, message string, httpStatusCode int) {
+	log.Warnf("Returning error response: %s (%d)", message, httpStatusCode)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(httpStatusCode)
 	resp := make(map[string]string)

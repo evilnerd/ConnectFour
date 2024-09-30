@@ -12,7 +12,7 @@ type NewGameResponse struct {
 func NewGameResponseFromGame(game Game) NewGameResponse {
 	return NewGameResponse{
 		Key:       game.Key,
-		CreatedAt: time.Now(),
+		CreatedAt: game.CreatedAt,
 		CreatedBy: game.Player1Name,
 		Status:    game.Status,
 	}

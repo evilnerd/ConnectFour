@@ -19,3 +19,14 @@ func (d Disc) Render() byte {
 	}
 	return '/'
 }
+
+func NewDisc(input byte) Disc {
+	switch input {
+	case 'X':
+		return RedDisc
+	case 'O':
+		return YellowDisc
+	default:
+		return NoDisc
+	}
+}
