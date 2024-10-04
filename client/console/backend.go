@@ -1,6 +1,7 @@
-package client
+package console
 
 import (
+	"bytes"
 	"connectfour/server"
 	"encoding/json"
 	"log"
@@ -51,4 +52,36 @@ func JoinableGames() []server.NewGameResponse {
 	}
 
 	return resp
+}
+
+func CreateGame(name string, public bool) server.NewGameResponse {
+	req := server.NewGameRequest{
+		Player1Name: name,
+		Public:      public,
+	}
+
+	body, _ := json.Marshal(req)
+
+	response, err := http.Post(makeUrl("game"), "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		log.Printf("There was an error making a request to the server: %v\n", err)
+		return server.NewGameResponse{}
+	}
+
+	if response.StatusCode != http.StatusOK {
+		log.Printf("The server responded with an error: %d - %s\n", response.StatusCode, response.Status)
+		return server.NewGameResponse{}
+	}
+
+	dec := json.NewDecoder(response.Body)
+
+	var resp server.NewGameResponse
+	err = dec.Decode(&resp)
+
+	if err != nil {
+		log.Printf("Could not decode the new-game information from the server: %v\n", err)
+	}
+
+	return resp
+
 }

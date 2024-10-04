@@ -1,10 +1,11 @@
 package main
 
 import (
-	. "connectfour/client"
+	. "connectfour/client/console"
 	"fmt"
-	tea "github.com/charmbracelet/bubbletea"
 	"os"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {

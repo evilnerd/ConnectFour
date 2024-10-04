@@ -1,13 +1,14 @@
-package client
+package console
 
 import (
 	"connectfour/server"
 	"fmt"
+	"strings"
+
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"strings"
-	"time"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -29,27 +30,8 @@ type GamesFetched struct {
 	games []server.NewGameResponse
 }
 
-type Item struct {
-	title       string
-	description string
-}
-
-func NewItem(title string, description string) Item {
-	return Item{
-		title, description,
-	}
-}
-
-func (i Item) Title() string {
-	return i.title
-}
-
-func (i Item) Description() string {
-	return i.description
-}
-
-func (i Item) FilterValue() string {
-	return i.title
+type GameCreated struct {
+	game server.NewGameResponse
 }
 
 type Step string
@@ -57,17 +39,17 @@ type Step string
 func (s Step) String() string { return string(s) }
 
 const (
-	GetTheName    Step = "get the name"
+	AskTheName    Step = "get the name"
 	StartOrJoin   Step = "start or join"
 	SelectGame    Step = "choose an existing game key"
-	GetTheGameKey Step = "enter an existing game key"
+	AskTheGameKey Step = "enter an existing game key"
 	ShowGameKey   Step = "show the current game key"
 	StartGame     Step = "start the game"
 )
 
 func NewStartModel() StartModel {
 	m := StartModel{
-		Step: GetTheName,
+		Step: AskTheName,
 		Text: textinput.New(),
 	}
 	m.Text.Placeholder = "Your name"
@@ -88,6 +70,13 @@ func (m StartModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Games = msg.games
 		initGamesList(&m)
 
+	case GameCreated:
+		if msg.game.Key == "" {
+			m.Step = StartOrJoin
+		} else {
+			m.GameKey = msg.game.Key
+		}
+
 	// Is it a key press?
 	case tea.KeyMsg:
 
@@ -97,17 +86,15 @@ func (m StartModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// These keys should exit the program.
 		case "ctrl+c", "q", "escape":
 			return m, tea.Quit
-			return m, tea.Quit
 		case "enter":
 			progressStep(&m)
-
 		}
 
 	}
 
 	var cmd tea.Cmd
 	switch m.Step {
-	case GetTheName, GetTheGameKey:
+	case AskTheName, AskTheGameKey:
 		m.Text, cmd = m.Text.Update(msg)
 		return m, cmd
 
@@ -118,46 +105,40 @@ func (m StartModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmd = tea.Batch(cmd, loadGames)
 		}
 		return m, cmd
+
+	case ShowGameKey:
+		if m.GameKey == "" {
+			return m, startGame(m.LocalPlayerName, !m.IsPrivateGame)
+		} else {
+			return m, nil
+		}
+
+	case StartGame:
+		return m, nil
 	}
 
 	return m, nil
 }
 
-func loadGames() tea.Msg {
-	time.Sleep(time.Second * 2)
-	//m.Games = JoinableGames()
-	games := []server.NewGameResponse{
-		{
-			Key:       "AAAAAA",
-			CreatedAt: time.Now().Add(-time.Hour * 2),
-			CreatedBy: "Dick",
-			Status:    server.Created,
-		},
-		{
-			Key:       "BBBBB",
-			CreatedAt: time.Now().Add(-time.Hour * 3),
-			CreatedBy: "Marian",
-			Status:    server.Created,
-		},
-		{
-			Key:       "CCCCC",
-			CreatedAt: time.Now().Add(-time.Hour * 4),
-			CreatedBy: "Sanae",
-			Status:    server.Created,
-		},
-		{
-			Key:       "DDDDDD",
-			CreatedAt: time.Now().Add(-time.Hour * 5),
-			CreatedBy: "Lucy",
-			Status:    server.Created,
-		},
+func startGame(name string, public bool) tea.Cmd {
+	return func() tea.Msg {
+		result := CreateGame(name, public)
+		if result.Key == "" {
+			// Something went wrong.
+			log.Error("Something went wrong creating the game.")
+		}
+		return GameCreated{game: result}
 	}
+}
+
+func loadGames() tea.Msg {
+	games := JoinableGames()
 	return GamesFetched{games: games}
 }
 
 //goland:noinspection GoMixedReceiverTypes
 func progressStep(m *StartModel) {
-	if m.Step == GetTheName {
+	if m.Step == AskTheName {
 		m.LocalPlayerName = m.Text.Value()
 		m.Step = StartOrJoin
 		initCreateOrJoinList(m)
@@ -167,19 +148,25 @@ func progressStep(m *StartModel) {
 		if m.IsNewGame {
 			m.Step = ShowGameKey
 		} else if m.IsPrivateGame {
-			m.Step = GetTheGameKey
+			m.Step = AskTheGameKey
 		} else {
 			m.Step = SelectGame
+		}
+	} else if m.GameKey != "" {
+		if m.Step == StartOrJoin {
+			m.Step = ShowGameKey
+		} else {
+			m.Step = StartGame
 		}
 	}
 }
 
 func initCreateOrJoinList(m *StartModel) {
 	options := []list.Item{
-		NewItem("1. Create new private game", "Creates a new game that will not be public, so you must share the key."),
-		NewItem("2. Create new public game", "Creates a new game that's going to be listed and open for anyone to join."),
-		NewItem("3. Join a private game", "Join a game that's not listed, but that you received a key for."),
-		NewItem("4. Join a public game", "Browse the list of games and join one (this will fetch the list of games)."),
+		NewOption("1. Create new private game", "Creates a new game that will not be public, so you must share the key."),
+		NewOption("2. Create new public game", "Creates a new game that's going to be listed and open for anyone to join."),
+		NewOption("3. Join a private game", "Join a game that's not listed, but that you received a key for."),
+		NewOption("4. Join a public game", "Browse the list of games and join one (this will fetch the list of games)."),
 	}
 
 	delegate := list.NewDefaultDelegate()
@@ -195,7 +182,7 @@ func initGamesList(m *StartModel) {
 	options := []list.Item{}
 	for _, game := range m.Games {
 		options = append(options,
-			NewItem(
+			NewOption(
 				fmt.Sprintf("%s (%s)", game.CreatedBy, game.Key),
 				fmt.Sprintf("Created at %s | status: %s", game.CreatedAt, game.Status)),
 		)
@@ -219,7 +206,7 @@ func (m StartModel) View() string {
 	b.WriteString(styles.AppTitle.Render("ConnectFour 0.1"))
 
 	// Player name
-	if m.Step != GetTheName {
+	if m.Step != AskTheName {
 		b.WriteRune('\n')
 		b.WriteString(styles.Label.Render("Player name"))
 		b.WriteString(styles.Value.Render(m.LocalPlayerName))
@@ -228,13 +215,15 @@ func (m StartModel) View() string {
 
 	// Step-specific views
 	switch m.Step {
-	case GetTheName:
-		b.WriteString(m.ViewGetName())
+	case AskTheName:
+		b.WriteString(m.ViewAskName())
 
 	case StartOrJoin:
 		b.WriteString(m.ViewStartOrJoin())
 	case SelectGame:
 		b.WriteString(m.ViewSelectGame())
+	case ShowGameKey:
+		b.WriteString(m.ViewShowGameKey())
 	default:
 		b.WriteString("step = " + m.Step.String())
 	}
@@ -243,8 +232,23 @@ func (m StartModel) View() string {
 	//return lipgloss.JoinVertical(lipgloss.Left, title, form)
 }
 
+func (m StartModel) ViewShowGameKey() string {
+
+	view := styles.Label.Render("Your game key is ")
+
+	if m.GameKey == "" {
+		view += styles.Value.Render("being generated")
+	} else {
+		view += styles.Value.Render(m.GameKey)
+	}
+
+	// TODO: if the game is not yet used by a player 2 we can't start the game yet.
+
+	return view
+}
+
 //goland:noinspection GoMixedReceiverTypes
-func (m StartModel) ViewGetName() string {
+func (m StartModel) ViewAskName() string {
 	view := styles.Label.Render("Enter your name")
 	return view + "\n" + m.Text.View()
 }
@@ -280,7 +284,7 @@ func (m StartModel) Init() tea.Cmd {
 
 //goland:noinspection GoMixedReceiverTypes
 func (m *StartModel) nextStep() {
-	if m.Step == GetTheName {
+	if m.Step == AskTheName {
 		m.LocalPlayerName = "Dick"
 		m.Step = StartOrJoin
 	}

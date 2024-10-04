@@ -1,10 +1,11 @@
-package client
+package console
 
 import (
 	"connectfour/game"
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"strings"
 )
 
 type GameModel struct {
