@@ -27,6 +27,7 @@ const (
 	Started  GameStatus = "started"
 	Finished GameStatus = "finished"
 	Aborted  GameStatus = "aborted"
+	Unknown  GameStatus = "unknown" // used in the client to indicate the status should be fetched.
 )
 
 // NewGame will create a new game, add it to the list and set the status to 'created'. It needs a second

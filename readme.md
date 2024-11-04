@@ -7,3 +7,12 @@ It's a tiny experiment to try out [BubbleTea](https://github.com/charmbracelet/b
 applications in Go.
 
 ![Screenshot](doc/screenshot.png)
+
+
+## Game state
+
+```plantuml
+    () -> test
+    
+
+```

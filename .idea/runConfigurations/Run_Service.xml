@@ -3,7 +3,7 @@
     <module name="ConnectFour" />
     <working_directory value="$PROJECT_DIR$" />
     <envs>
-      <env name="CONNECT_FOUR_SERVER_PORT" value="8888" />
+      <env name="CONNECT_FOUR_SERVER_PORT" value="8443" />
     </envs>
     <kind value="FILE" />
     <package value="connectfour" />

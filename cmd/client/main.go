@@ -1,7 +1,7 @@
 package main
 
 import (
-	. "connectfour/client/console"
+	. "connectfour/client/console/models"
 	"fmt"
 	"os"
 
