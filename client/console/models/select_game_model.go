@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"log"
+	"strings"
 )
 
 type GamesFetched struct {
@@ -18,12 +20,17 @@ type GameSelected struct {
 }
 
 type SelectGameModel struct {
-	Games []server.NewGameResponse
-	List  list.Model
+	*State
+	Games   []server.NewGameResponse
+	List    list.Model
+	loading bool
 }
 
-func NewSelectGameModel() SelectGameModel {
-	return SelectGameModel{}
+func NewSelectGameModel(state *State) *SelectGameModel {
+	return &SelectGameModel{
+		State:   state,
+		loading: true,
+	}
 }
 
 func (m SelectGameModel) Init() tea.Cmd {
@@ -34,25 +41,52 @@ func (m SelectGameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 
-	switch msg.(type) {
+	switch msg := msg.(type) {
 	case GamesFetched:
+		m.Games = msg.games
+		log.Printf("Games fetched. Size = %d\n", len(msg.games))
+		m.loading = false
 		initGamesList(&m)
-	case tea.KeyMsg:
-		if msg == tea.KeyEnter {
-			return m, func() tea.Msg { return GameSelected{GameKey: key} }
-		}
 
-	default:
-		m.List, cmd = m.List.Update(msg)
-		return m, cmd
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc":
+			return m.PreviousModel()
+		case "enter":
+			if (!m.loading) && len(m.Games) > 0 {
+				m.Key = m.List.SelectedItem().(console.Option).Key()
+				return m.NextModel()
+			} else {
+				return m.PreviousModel()
+			}
+		}
 	}
 
-	return m, nil
+	if !m.loading && len(m.Games) > 0 {
+		m.List, cmd = m.List.Update(msg)
+		return m, cmd
+	} else {
+		return m, nil
+	}
 }
 
 func (m SelectGameModel) View() string {
-	//TODO implement me
-	panic("implement me")
+
+	var b strings.Builder
+
+	b.WriteString(styles.Header.Render("Select an existing game\n"))
+
+	if m.loading {
+		b.WriteString("Loading games...")
+	} else {
+		if len(m.Games) == 0 {
+			b.WriteString("There were no open games to choose from.")
+		} else {
+			b.WriteString(m.List.View())
+		}
+	}
+
+	return b.String()
 }
 
 func loadGames() tea.Msg {
@@ -65,6 +99,7 @@ func initGamesList(m *SelectGameModel) {
 	for _, game := range m.Games {
 		options = append(options,
 			console.NewOption(
+				game.Key,
 				fmt.Sprintf("%s (%s)", game.CreatedBy, game.Key),
 				fmt.Sprintf("Created at %s | status: %s", game.CreatedAt, game.Status)),
 		)
@@ -74,7 +109,8 @@ func initGamesList(m *SelectGameModel) {
 
 	m.List = list.New(options, delegate, 80, 20)
 	m.List.Title = "Select a game to join"
-	m.List.SetShowStatusBar(true)
+	m.List.SetShowHelp(false)
+	m.List.SetShowStatusBar(false)
 	m.List.SetFilteringEnabled(true)
 	m.List.SetShowPagination(true)
 }

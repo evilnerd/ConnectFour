@@ -46,15 +46,25 @@ func NewGame(player1Name string, public bool) Game {
 }
 
 // Join will add the second player to the game and set the status to 'started'.
-func (g *Game) Join(player2Name string) error {
-	if g.Status != Created {
+func (g *Game) Join(joiningName string) error {
+	if g.Status != Created && joiningName != g.Player2Name && joiningName != g.Player1Name {
 		return errors.New("you can only join a game that has status 'Created'")
 	}
 
-	g.Status = Started
-	g.StartedAt = time.Now()
-	g.Player2Name = player2Name
-	g.PlayerTurn = 1
+	// If the joining player is already part of the game, then
+	// just do nothing to the game's state.
+	if g.Player1Name == joiningName || g.Player2Name == joiningName {
+		return nil
+	}
+
+	// if the second player wasn't set yet, then now is the time
+	// to start the game.
+	if g.Player2Name == "" {
+		g.Status = Started
+		g.StartedAt = time.Now()
+		g.Player2Name = joiningName
+		g.PlayerTurn = 1
+	}
 
 	return nil
 }

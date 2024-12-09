@@ -15,15 +15,16 @@ const (
 )
 
 type AskKeyModel struct {
-	MainModel
+	*State
 	InputGameKey string
 	ErrorMessage string
 	SubStatus    AskKeySubStatus
 	Text         textinput.Model // the input box
 }
 
-func NewAskKeyModel() AskKeyModel {
-	return AskKeyModel{
+func NewAskKeyModel(state *State) *AskKeyModel {
+	return &AskKeyModel{
+		State:     state,
 		Text:      textinput.New(),
 		SubStatus: WaitingForInput,
 	}
@@ -38,13 +39,16 @@ func (m AskKeyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC:
-			return m, tea.Quit
+			return m, QuitCmd
 		case tea.KeyEscape:
-			break
+			return m, BackCmd
 		case tea.KeyEnter:
-			break
+			m.Key = m.Text.Value()
+			return m.NextModel()
 		}
 	}
+	m.Text.Update(msg)
+	return m, nil
 }
 
 func (m AskKeyModel) View() string {

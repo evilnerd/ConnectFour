@@ -1,13 +1,16 @@
 package console
 
 type Option struct {
+	key         string
 	title       string
 	description string
 }
 
-func NewOption(title string, description string) Option {
+func NewOption(key string, title string, description string) Option {
 	return Option{
-		title, description,
+		key,
+		title,
+		description,
 	}
 }
 
@@ -22,3 +25,5 @@ func (i Option) Description() string {
 func (i Option) FilterValue() string {
 	return i.title
 }
+
+func (i Option) Key() string { return i.key }

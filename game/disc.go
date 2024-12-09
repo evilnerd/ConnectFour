@@ -2,6 +2,10 @@ package game
 
 type Disc int
 
+func discFromInt(i int) Disc {
+	return Disc(i)
+}
+
 const (
 	NoDisc = iota
 	RedDisc

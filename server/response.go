@@ -24,6 +24,8 @@ type GameStateResponse struct {
 	PlayerTurn     int            `json:"player_turn"` // either 1 or 2
 	PlayerTurnName string         `json:"player_turn_name"`
 	Board          map[int]string `json:"board"`
+	Player1Name    string         `json:"player1Name"`
+	Player2Name    string         `json:"player2Name"`
 }
 
 func NewGameStateResponse(game Game) GameStateResponse {
@@ -33,5 +35,7 @@ func NewGameStateResponse(game Game) GameStateResponse {
 		PlayerTurn:     game.PlayerTurn,
 		PlayerTurnName: game.CurrentPlayerName(),
 		Board:          game.board.Map(),
+		Player1Name:    game.Player1Name,
+		Player2Name:    game.Player2Name,
 	}
 }
