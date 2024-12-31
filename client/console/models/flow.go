@@ -5,14 +5,31 @@ import (
 	"connectfour/server"
 	"errors"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"log"
 )
+
+type BreadCrumber interface {
+	BreadCrumb() string
+}
+
+type ConnectFourModel interface {
+	tea.Model
+	BreadCrumber
+}
+
+type StepNode struct {
+	BreadCrumb string
+	Step       Step
+	Previous   *StepNode
+	Model      *ConnectFourModel
+}
 
 type Step string
 
 type State struct {
-	CurrentStep   Step
-	CurrentModel  tea.Model
+	CurrentStep   *StepNode
+	CurrentModel  ConnectFourModel
 	Key           string
 	PlayerName    string
 	GameStatus    server.GameStatus
@@ -45,7 +62,12 @@ var (
 
 func CreateModels() *MainModel {
 
-	state = &State{}
+	state = &State{
+		CurrentStep: &StepNode{
+			BreadCrumb: "Start",
+			Previous:   nil,
+		},
+	}
 
 	mainModel = *NewMainModel(state)
 	askKeyModel = *NewAskKeyModel(state)
@@ -56,7 +78,7 @@ func CreateModels() *MainModel {
 	selectGameModel = *NewSelectGameModel(state)
 	startOrJoinModel = *NewStartOrJoinModel(state)
 
-	state.CurrentModel = askNameModel
+	state.CurrentModel = mainModel
 
 	return &mainModel
 }
@@ -66,8 +88,18 @@ func (s *State) CantContinueModel(message string) (tea.Model, tea.Cmd) {
 	return exitModel, tea.Quit
 }
 
+func (s *State) SkipAskName() {
+	log.Printf("Skip name step, argument passed: -name %s\n", s.PlayerName)
+	s.CurrentModel = startOrJoinModel
+}
+
+func (s *State) SkipAskKey() {
+	log.Printf("Skip game mode/ game select steps, argument passed: -key %s\n", s.Key)
+	s.CurrentModel = playGameModel
+}
+
 func (s *State) PreviousModel() (tea.Model, tea.Cmd) {
-	var prevModel tea.Model = askNameModel
+	var prevModel ConnectFourModel = askNameModel
 	var prevCmd tea.Cmd
 
 	switch (s.CurrentModel).(type) {
@@ -82,20 +114,23 @@ func (s *State) PreviousModel() (tea.Model, tea.Cmd) {
 		prevModel = startOrJoinModel
 	}
 	log.Printf("[Previous] Current Model = %T, Next Model = %T\n", s.CurrentModel, prevModel)
-	s.CurrentModel = prevModel
+	s.NavigateBackward(prevModel)
 	return prevModel, prevCmd
 }
 
 func (s *State) NextModel() (tea.Model, tea.Cmd) {
 
-	var nextModel tea.Model = askNameModel
+	var nextModel ConnectFourModel = mainModel
 	var nextCmd tea.Cmd
 
 	switch (s.CurrentModel).(type) {
+	case MainModel:
+		nextModel = askNameModel
 	case AskNameModel:
 		nextModel = startOrJoinModel
 	case AskKeyModel:
 		nextModel = playGameModel
+		nextCmd = joinGame(s.Key, s.PlayerName)
 	case StartOrJoinModel:
 		if s.IsNewGame {
 			nextModel = createGameModel
@@ -110,7 +145,7 @@ func (s *State) NextModel() (tea.Model, tea.Cmd) {
 		}
 	case CreateGameModel:
 		nextModel = playGameModel
-		nextCmd = loadGameInfo(s.Key)
+		nextCmd = LoadGameInfo(s.Key)
 	case SelectGameModel:
 		log.Printf("Player selected game %s, starting game...\n", s.Key)
 		nextModel = playGameModel
@@ -118,24 +153,53 @@ func (s *State) NextModel() (tea.Model, tea.Cmd) {
 	}
 
 	log.Printf("[Next] Current Model = %T Next Model = %T\n", s.CurrentModel, nextModel)
-	s.CurrentModel = nextModel
-
+	s.NavigateForward(nextModel)
 	return nextModel, nextCmd
 }
 
-func loadGameState(key string) tea.Cmd {
-	return func() tea.Msg {
-		s, err := backend.GameState(key)
-		msg := GameStateMsg{
-			status: server.Unknown,
-		}
-		if errors.Is(err, backend.GameNotFoundError{}) {
-			msg.errorMessage = "This game key could not be found"
-		} else {
-			msg.status = s
-		}
-		return msg
+func (s *State) NavigateBackward(to ConnectFourModel) {
+	s.CurrentStep = s.CurrentStep.Previous
+	s.CurrentStep.Model = &to
+	s.CurrentStep.BreadCrumb = to.BreadCrumb()
+	s.CurrentModel = to
+}
+
+func (s *State) NavigateForward(to ConnectFourModel) {
+	s.CurrentModel = to
+	s.CurrentStep = &StepNode{
+		Previous:   s.CurrentStep,
+		BreadCrumb: s.CurrentModel.BreadCrumb(),
 	}
+	to.Init()
+}
+
+// CommonUpdate handles the common update messages and key presses (enter, esc) - it returns Model and Cmd in
+// the same way that Update returns plus a boolean to indicate the calling Update can immediately return.
+func (s *State) CommonUpdate(msg tea.Msg) (tea.Model, tea.Cmd, bool) {
+	return nil, nil, false
+}
+
+func (s *State) CommonView(detail string) string {
+	return lipgloss.JoinVertical(lipgloss.Left,
+		s.renderHeader(),
+		styles.Page.Render(detail),
+	)
+}
+
+func (s *State) renderHeader() string {
+	return lipgloss.JoinVertical(lipgloss.Left,
+		styles.AppTitle.Render("ConnectFour 0.2"),
+		s.renderBreadCrumb(),
+	)
+}
+
+func (s *State) renderBreadCrumb() string {
+	var out string
+
+	for n := s.CurrentStep; n.Previous != nil; n = n.Previous {
+		out = styles.BreadCrumbSeparator.Render(" > ") + styles.BreadCrumb.Render(n.BreadCrumb) + out
+	}
+	return out
 }
 
 type GameInfoMsg struct {
@@ -143,8 +207,8 @@ type GameInfoMsg struct {
 	errorMessage string
 }
 
-// loadGameInfo returns a Cmd that sends a tea.Msg when Game Info is fetched.
-func loadGameInfo(key string) tea.Cmd {
+// LoadGameInfo returns a Cmd that sends a GameInfoMsg when Game Info is fetched.
+func LoadGameInfo(key string) tea.Cmd {
 	return func() tea.Msg {
 		info, err := backend.GameInfo(key)
 		msg := GameInfoMsg{

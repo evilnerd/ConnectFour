@@ -1,32 +1,25 @@
 package models
 
 import (
-	"connectfour/client/console"
-	"connectfour/client/console/backend"
 	"connectfour/server"
+	"fmt"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-)
-
-var (
-	styles = console.NewAppStyles()
+	"github.com/charmbracelet/lipgloss"
 )
 
 type AskNameModel struct {
+	ConnectFourModel
 	*State
-	Text             textinput.Model
-	ConnectionTested bool
-	ConnectionError  string
+	Text textinput.Model
 }
 
 func (s Step) String() string { return string(s) }
 
 func NewAskNameModel(state *State) *AskNameModel {
 	m := &AskNameModel{
-		State:            state,
-		Text:             textinput.New(),
-		ConnectionTested: false,
-		ConnectionError:  "",
+		State: state,
+		Text:  textinput.New(),
 	}
 	m.Text.Placeholder = "Your name"
 	m.Text.Focus()
@@ -35,41 +28,21 @@ func NewAskNameModel(state *State) *AskNameModel {
 	return m
 }
 
-type NotConnected struct {
-	message string
+func (m AskNameModel) BreadCrumb() string {
+	if m.PlayerName == "" {
+		return "Name"
+	}
+	return fmt.Sprintf("Name (%s)", m.PlayerName)
 }
-
-type Connected struct{}
 
 func (m AskNameModel) Init() tea.Cmd {
-	return connect()
-}
-
-func connect() tea.Cmd {
-	return func() tea.Msg {
-		err := backend.Hello()
-		if err != nil {
-			return NotConnected{err.Error()}
-		}
-		return Connected{}
-	}
-}
-
-func (m AskNameModel) isConnected() bool {
-	return m.ConnectionTested && m.ConnectionError == ""
+	return nil
 }
 
 func (m AskNameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// If a form is active, make that one handle the key updates.
 	switch msg := msg.(type) {
-
-	case NotConnected:
-		m.ConnectionError = msg.message
-		m.ConnectionTested = true
-
-	case Connected:
-		m.ConnectionTested = true
 
 	// Is it a key press?
 	case tea.KeyMsg:
@@ -83,14 +56,10 @@ func (m AskNameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.NextModel()
 		}
 	}
-	if m.isConnected() {
-		var cmd tea.Cmd
-		m.Text, cmd = m.Text.Update(msg)
-		return m, cmd
-	} else if m.ConnectionTested && m.ConnectionError != "" {
-		return m, tea.Quit
-	}
-	return m, nil
+
+	var cmd tea.Cmd
+	m.Text, cmd = m.Text.Update(msg)
+	return m, cmd
 }
 
 type GameStateMsg struct {
@@ -100,14 +69,9 @@ type GameStateMsg struct {
 }
 
 func (m AskNameModel) View() string {
-	view := ""
-	if !m.ConnectionTested {
-		view = styles.Label.Render("Checking connection...\n")
-	} else if m.ConnectionError != "" {
-		view = styles.Label.Render("Connection error: " + m.ConnectionError + "\n")
-	} else {
-		view = styles.Label.Render("Enter your name")
-		view += "\n" + m.Text.View()
-	}
-	return view
+	view := lipgloss.JoinVertical(lipgloss.Left,
+		styles.Description.Render("Enter your name to uniquely identify you"),
+		m.Text.View(),
+	)
+	return m.CommonView(view)
 }

@@ -4,11 +4,15 @@ import "github.com/charmbracelet/lipgloss"
 
 type AppStyles struct {
 	// The Normal state.
-	AppTitle lipgloss.Style
-	Label    lipgloss.Style
-	Value    lipgloss.Style
-	Header   lipgloss.Style
-	Subdued  lipgloss.Style
+	AppTitle            lipgloss.Style
+	Label               lipgloss.Style
+	Value               lipgloss.Style
+	Header              lipgloss.Style
+	Subdued             lipgloss.Style
+	BreadCrumb          lipgloss.Style
+	BreadCrumbSeparator lipgloss.Style
+	Page                lipgloss.Style
+	Description         lipgloss.Style
 }
 
 // NewAppStyles returns style definitions for the app. So that we can refer to styles by name and manage them
@@ -30,6 +34,22 @@ func NewAppStyles() (s AppStyles) {
 
 	s.Subdued = lipgloss.NewStyle().
 		Foreground(lipgloss.AdaptiveColor{Light: "#C2B8C2", Dark: "#4D4D4D"})
+
+	s.BreadCrumb = lipgloss.NewStyle().
+		Foreground(lipgloss.AdaptiveColor{Light: "#4D4D4D", Dark: "#9D9DAD"}).
+		Align(lipgloss.Left)
+
+	s.BreadCrumbSeparator = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#AAA")).
+		Bold(true).
+		Align(lipgloss.Left)
+
+	s.Page = lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).Padding(2)
+
+	s.Description = s.Label.Copy().
+		Padding(0, 0, 1, 0).
+		Background(lipgloss.AdaptiveColor{Light: "#222", Dark: "DDD"})
 
 	return s
 }

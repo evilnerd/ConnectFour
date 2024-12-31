@@ -3,6 +3,7 @@ package models
 import (
 	"connectfour/client/console/backend"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,6 +17,10 @@ func NewCreateGameModel(state *State) *CreateGameModel {
 		State:   state,
 		created: false,
 	}
+}
+
+func (m CreateGameModel) BreadCrumb() string {
+	return "Create"
 }
 
 func (m CreateGameModel) Init() tea.Cmd {
@@ -44,15 +49,17 @@ func (m CreateGameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m CreateGameModel) View() string {
 
-	view := styles.Header.Render("Create a new game\n")
-
+	view := ""
 	if m.created {
 		view += styles.Label.Render("The game has been created, the key is: ") + styles.Value.Render(m.Key)
 		view += "\n" + styles.Label.Render("Press enter to continue.")
 	} else {
 		view += styles.Value.Render("The game is being created...")
 	}
-	return view
+	return m.CommonView(lipgloss.JoinVertical(lipgloss.Left,
+		styles.Description.Render("Creating a new game"),
+		view,
+	))
 }
 
 func createGame(name string, private bool) tea.Cmd {

@@ -5,6 +5,7 @@ import (
 	"connectfour/server"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type GameCreated struct {
@@ -16,6 +17,10 @@ type StartOrJoinModel struct {
 	List list.Model
 }
 
+func (m StartOrJoinModel) BreadCrumb() string {
+	return "Type"
+}
+
 func NewStartOrJoinModel(state *State) *StartOrJoinModel {
 	options := []list.Item{
 		console.NewOption("1", "1. Create new private game", "Creates a new game that will not be public, so you must share the key."),
@@ -25,12 +30,13 @@ func NewStartOrJoinModel(state *State) *StartOrJoinModel {
 	}
 
 	delegate := list.NewDefaultDelegate()
-	l := list.New(options, delegate, 80, 20)
+	l := list.New(options, delegate, 60, 14)
 	l.Title = "Kind of game"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.SetShowPagination(false)
 	l.SetShowHelp(false)
+	l.SetShowTitle(false)
 
 	return &StartOrJoinModel{
 		List:  l,
@@ -61,6 +67,9 @@ func (m StartOrJoinModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m StartOrJoinModel) View() string {
-	view := styles.Label.Render("What kind of game do you want to start? \n\n")
-	return view + m.List.View()
+	view := lipgloss.JoinVertical(lipgloss.Left,
+		styles.Description.Render("What kind of game do you want to start?"),
+		m.List.View(),
+	)
+	return m.CommonView(view)
 }

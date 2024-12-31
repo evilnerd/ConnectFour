@@ -15,3 +15,9 @@ type QuitMsg struct{}
 func QuitCmd() tea.Msg {
 	return QuitMsg{}
 }
+
+type NotConnected struct {
+	message string
+}
+
+type Connected struct{}

@@ -4,6 +4,7 @@ import (
 	"connectfour/server"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type AskKeySubStatus string
@@ -30,6 +31,10 @@ func NewAskKeyModel(state *State) *AskKeyModel {
 	}
 }
 
+func (m AskKeyModel) BreadCrumb() string {
+	return "Key"
+}
+
 func (m AskKeyModel) Init() tea.Cmd {
 	return nil
 }
@@ -37,12 +42,12 @@ func (m AskKeyModel) Init() tea.Cmd {
 func (m AskKeyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyCtrlC:
+		switch msg.String() {
+		case "ctrl+c":
 			return m, QuitCmd
-		case tea.KeyEscape:
+		case "esc", "q":
 			return m, BackCmd
-		case tea.KeyEnter:
+		case "enter":
 			m.Key = m.Text.Value()
 			return m.NextModel()
 		}
@@ -52,20 +57,26 @@ func (m AskKeyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m AskKeyModel) View() string {
+
 	view := ""
 	if m.InputGameKey == "" && m.ErrorMessage == "" {
-		view = styles.Label.Render("Enter the private game key that was shared with you")
-		view += "\n" + m.Text.View()
+		view = lipgloss.JoinVertical(lipgloss.Left,
+			styles.Label.Render("Enter the private game key that was shared with you"),
+			m.Text.View(),
+		)
 	} else {
-		view += styles.Label.Render("Game key ") + styles.Value.Render(m.InputGameKey) + "\n"
 		if m.ErrorMessage != "" {
-			view += styles.Label.Render(m.ErrorMessage) + "\n"
+			view = styles.Label.Render(m.ErrorMessage) + "\n"
 		} else if m.GameStatus == server.Unknown {
-			view += styles.Subdued.Render("Looking for that game...\n")
+			view = styles.Subdued.Render("Looking for that game...\n")
 		} else {
-			view += styles.Subdued.Render("The game status is " + string(m.GameStatus) + "\n")
+			view = styles.Subdued.Render("The game status is " + string(m.GameStatus) + "\n")
 		}
+		view = lipgloss.JoinVertical(lipgloss.Left,
+			styles.Label.Render("Game key ")+styles.Value.Render(m.InputGameKey),
+			view,
+		)
 	}
 
-	return view
+	return m.CommonView(view)
 }

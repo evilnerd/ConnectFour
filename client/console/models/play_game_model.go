@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"log"
 	"strings"
+	"time"
 )
 
 type PlayGameModel struct {
@@ -20,6 +21,14 @@ type PlayGameModel struct {
 	yellowColor   lipgloss.Style
 }
 
+type RefreshTickMsg time.Time
+
+func doTick() tea.Cmd {
+	return tea.Every(time.Second, func(t time.Time) tea.Msg {
+		return RefreshTickMsg(t)
+	})
+}
+
 func NewPlayGameModel(state *State) *PlayGameModel {
 	m := &PlayGameModel{
 		State: state,
@@ -27,26 +36,23 @@ func NewPlayGameModel(state *State) *PlayGameModel {
 	m.currentPlayer = game.RedDisc
 	m.redColor = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000"))
 	m.yellowColor = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFF00"))
-
+	m.Loading = true
 	return m
 }
 
-type PlayMsg struct {
-	info         server.GameStateResponse
-	errorMessage string
+func (m PlayGameModel) BreadCrumb() string {
+	return "Play"
 }
 
 func (m PlayGameModel) PlayMoveCmd(column int) tea.Cmd {
 	m.Loading = true
 	return func() tea.Msg {
 		info, err := backend.Move(m.Key, column)
-		msg := PlayMsg{
+		msg := GameInfoMsg{
 			info: info,
 		}
 		if errors.Is(err, backend.GameNotFoundError{}) {
 			msg.errorMessage = "This game key could not be found"
-		} else {
-			msg.info = info
 		}
 		return msg
 	}
@@ -58,27 +64,29 @@ func (m PlayGameModel) playing() bool {
 		m.GameInfo.Status == server.Started
 }
 
+func (m PlayGameModel) myTurn() bool {
+	return m.GameInfo.PlayerTurnName == m.PlayerName
+}
+
 func (m PlayGameModel) Init() tea.Cmd {
-	return loadGameInfo(m.Key)
+	log.Printf("Init for PlayGameModel - getting game data and starting ticker\n")
+	return tea.Batch(LoadGameInfo(m.Key), doTick())
 }
 
 func (m PlayGameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
-	case GameInfoMsg:
-		m.GameInfo = msg.info
-		if msg.errorMessage != "" {
-			log.Printf("There was an error getting the game state: %s\n", msg.errorMessage)
-			return m.PreviousModel()
-		}
+	case RefreshTickMsg:
+		//log.Printf("Refresh tick %s\n", time.Time(msg).Format("01-02-2006 15:04:05.000000"))
+		return m, tea.Batch(LoadGameInfo(m.Key), doTick())
 
-	case PlayMsg:
+	case GameInfoMsg:
 		m.GameInfo = msg.info
 		m.board = *game.FromMap(m.GameInfo.Board)
 		m.currentPlayer = game.Disc(m.GameInfo.PlayerTurn)
 		m.Loading = false
 		if msg.errorMessage != "" {
-			log.Printf("There was an error returned when trying to play the move: %s\n", msg.errorMessage)
+			log.Printf("There was an error getting the game state: %s\n", msg.errorMessage)
 			return m.PreviousModel()
 		}
 
@@ -88,11 +96,6 @@ func (m PlayGameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "esc", "ctrl+c", "q":
 				return m.PreviousModel()
-
-			// Reset the board
-			//case "r":
-			//	m.board.Reset()
-			//	m.currentPlayer = game.RedDisc
 
 			// control which column to drop in
 			case "left", "j":
@@ -106,7 +109,11 @@ func (m PlayGameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 			case "enter", " ":
-				return m, m.PlayMoveCmd(m.selectedCol + 1) // the server expects 1-7 for columns.
+				if m.myTurn() {
+					return m, m.PlayMoveCmd(m.selectedCol + 1) // the server expects 1-7 for columns.
+				} else {
+					return m, LoadGameInfo(m.Key)
+				}
 			}
 		} else {
 			if m.GameInfo.Status != "" {
@@ -120,46 +127,63 @@ func (m PlayGameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m PlayGameModel) View() string {
 
+	view := ""
 	if m.GameInfo.Status == "" {
-		return styles.Header.Render("Updating game info...")
+		view = styles.Header.Render("Updating game info...")
 	} else if m.GameInfo.Status == server.Started {
-		grey := lipgloss.NewStyle().Foreground(lipgloss.Color("#BBBBBB"))
-		b := strings.Builder{}
+		view = m.renderGameBoard()
+	} else if m.GameInfo.Status == server.Created {
+		view = styles.Header.Render("Waiting for other player... come back later.")
+	} else if m.GameInfo.Status == server.Finished {
+		view = styles.Header.Render("This game has finished. Better create a new one.")
+	} else {
+		view = styles.Header.Render("The game is no longer valid. ")
+	}
 
-		b.WriteString(styles.Header.Render("Playing a game\n"))
-		b.WriteString(styles.Subdued.Render("Gamekey "))
-		b.WriteString(styles.Value.Render(m.Key))
-		b.WriteString(styles.Subdued.Render(", game between "))
-		b.WriteString(styles.Value.Render(m.GameInfo.Player1Name))
-		b.WriteString(styles.Subdued.Render(" and "))
-		b.WriteString(styles.Value.Render(m.GameInfo.Player2Name))
-		b.WriteRune('\n')
-		b.WriteRune('\n')
+	return m.CommonView(view)
 
+}
+
+func (m PlayGameModel) renderGameBoard() string {
+	grey := lipgloss.NewStyle().Foreground(lipgloss.Color("#BBBBBB"))
+	b := strings.Builder{}
+
+	b.WriteString(lipgloss.JoinVertical(lipgloss.Left,
+		// Playing as
+		styles.Description.Render("Playing a game as ")+styles.Value.Render(m.PlayerName),
+		// Key and players
+		styles.Subdued.Render("Gamekey ")+
+			styles.Value.Render(m.Key)+
+			styles.Subdued.Render(", game between ")+
+			styles.Value.Render(m.GameInfo.Player1Name)+
+			styles.Subdued.Render(" and ")+
+			styles.Value.Render(m.GameInfo.Player2Name),
+		// Whose turn is it
+		styles.Subdued.Render("Player turn: ")+styles.Value.Render(m.GameInfo.PlayerTurnName),
+	))
+
+	if m.myTurn() {
 		b.WriteString(strings.Repeat(" ", (m.selectedCol*2)+1))
 		b.WriteString(m.renderDiscWithColor(m.currentPlayer))
-		b.WriteByte('\n')
-		for row := 0; row < game.BoardHeight; row++ {
-			b.WriteString(grey.Render("|"))
-			for col := 0; col < game.BoardWidth; col++ {
-				b.WriteString(m.renderDiscWithColor(m.board.Cell(row, col)))
-				b.WriteString(grey.Render("|"))
-			}
-			b.WriteString("\n")
-		}
-
-		if m.board.HasConnectFour() {
-			b.WriteString("Connect four!\n")
-		}
-
-		return b.String()
-	} else if m.GameInfo.Status == server.Created {
-		return styles.Header.Render("Waiting for other player... come back later.")
-	} else if m.GameInfo.Status == server.Finished {
-		return styles.Header.Render("This game has finished. Better create a new one.")
+		b.WriteRune('\n')
 	} else {
-		return styles.Header.Render("The game is no longer valid. ")
+		b.WriteString(styles.Subdued.Render("Waiting for other player move"))
+		b.WriteRune('\n')
 	}
+	for row := 0; row < game.BoardHeight; row++ {
+		b.WriteString(grey.Render("|"))
+		for col := 0; col < game.BoardWidth; col++ {
+			b.WriteString(m.renderDiscWithColor(m.board.Cell(row, col)))
+			b.WriteString(grey.Render("|"))
+		}
+		b.WriteString("\n")
+	}
+
+	if m.board.HasConnectFour() {
+		b.WriteString("Connect four!\n")
+	}
+
+	return b.String()
 }
 
 func (m PlayGameModel) renderDiscWithColor(disc game.Disc) string {

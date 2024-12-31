@@ -10,6 +10,10 @@ func NewExitModel(state *State) *ExitModel {
 	return &ExitModel{}
 }
 
+func (m ExitModel) BreadCrumb() string {
+	return "Exit"
+}
+
 func (m ExitModel) Init() tea.Cmd {
 	return nil
 }

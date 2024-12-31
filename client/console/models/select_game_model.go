@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"log"
-	"strings"
 )
 
 type GamesFetched struct {
@@ -33,6 +33,9 @@ func NewSelectGameModel(state *State) *SelectGameModel {
 	}
 }
 
+func (m SelectGameModel) BreadCrumb() string {
+	return "Select"
+}
 func (m SelectGameModel) Init() tea.Cmd {
 	return loadGames
 }
@@ -72,21 +75,22 @@ func (m SelectGameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m SelectGameModel) View() string {
 
-	var b strings.Builder
-
-	b.WriteString(styles.Header.Render("Select an existing game\n"))
+	contents := ""
 
 	if m.loading {
-		b.WriteString("Loading games...")
+		contents = "Loading games..."
 	} else {
 		if len(m.Games) == 0 {
-			b.WriteString("There were no open games to choose from.")
+			contents = "There were no open games to choose from."
 		} else {
-			b.WriteString(m.List.View())
+			contents = m.List.View()
 		}
 	}
 
-	return b.String()
+	return m.CommonView(lipgloss.JoinVertical(lipgloss.Left,
+		styles.Description.Render("Choose a game to (re-)join"),
+		contents,
+	))
 }
 
 func loadGames() tea.Msg {
@@ -108,9 +112,10 @@ func initGamesList(m *SelectGameModel) {
 	delegate := list.NewDefaultDelegate()
 
 	m.List = list.New(options, delegate, 80, 20)
-	m.List.Title = "Select a game to join"
 	m.List.SetShowHelp(false)
 	m.List.SetShowStatusBar(false)
 	m.List.SetFilteringEnabled(true)
 	m.List.SetShowPagination(true)
+	m.List.SetShowTitle(false)
+
 }
