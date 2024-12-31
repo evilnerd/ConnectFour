@@ -3,11 +3,12 @@ package models
 import tea "github.com/charmbracelet/bubbletea"
 
 type ExitModel struct {
+	*State
 	message string
 }
 
 func NewExitModel(state *State) *ExitModel {
-	return &ExitModel{}
+	return &ExitModel{State: state}
 }
 
 func (m ExitModel) BreadCrumb() string {
@@ -18,13 +19,14 @@ func (m ExitModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m ExitModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m ExitModel) Update(_ tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Quit
 }
 
 func (m ExitModel) View() string {
+	view := "Thanks for playing."
 	if m.message != "" {
-		return "ConnectFour exited: " + m.message + "\n"
+		view = "ConnectFour exited: " + m.message
 	}
-	return "Thanks for playing.\n"
+	return m.CommonView(view)
 }

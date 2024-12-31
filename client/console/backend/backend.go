@@ -83,17 +83,6 @@ func JoinableGames() []server.NewGameResponse {
 	return resp
 }
 
-// GameState returns the state of the game in a simple String representation.
-func GameState(key string) (server.GameStatus, error) {
-	info, err := GameInfo(key)
-
-	if err != nil {
-		return server.Unknown, err
-	}
-
-	return info.Status, nil
-}
-
 func CreateGame(name string, public bool) server.NewGameResponse {
 	req := server.NewGameRequest{
 		Player1Name: name,
@@ -156,7 +145,7 @@ func gameStateRequest(req any, parts ...string) (server.GameStateResponse, error
 	} else {
 		body, _ := json.Marshal(req)
 		response, err = http.Post(makeUrl(parts...), "application/json", bytes.NewBuffer(body))
-		if err != nil {
+		if err != nil || response == nil {
 			log.Printf("There was an error making a request to the server: %v\n", err)
 			return server.GameStateResponse{}, err
 		}

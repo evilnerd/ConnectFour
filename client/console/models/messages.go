@@ -1,6 +1,9 @@
 package models
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"connectfour/server"
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 // BackStepMsg is sent when the user pressed ESC.
 type BackStepMsg struct{}
@@ -20,4 +23,7 @@ type NotConnected struct {
 	message string
 }
 
+type GameCreated struct {
+	game server.NewGameResponse
+}
 type Connected struct{}

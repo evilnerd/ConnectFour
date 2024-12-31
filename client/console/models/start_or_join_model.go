@@ -2,15 +2,10 @@ package models
 
 import (
 	"connectfour/client/console"
-	"connectfour/server"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
-
-type GameCreated struct {
-	game server.NewGameResponse
-}
 
 type StartOrJoinModel struct {
 	*State

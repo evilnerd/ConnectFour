@@ -39,15 +39,6 @@ type State struct {
 	Loading       bool
 }
 
-const (
-	AskTheName    Step = "get the name"
-	StartOrJoin   Step = "start or join"
-	SelectGame    Step = "choose an existing game key"
-	AskTheGameKey Step = "enter an existing game key"
-	ShowGameKey   Step = "show the current game key"
-	StartGame     Step = "start the game"
-)
-
 var (
 	state            *State
 	askKeyModel      AskKeyModel
@@ -175,7 +166,7 @@ func (s *State) NavigateForward(to ConnectFourModel) {
 
 // CommonUpdate handles the common update messages and key presses (enter, esc) - it returns Model and Cmd in
 // the same way that Update returns plus a boolean to indicate the calling Update can immediately return.
-func (s *State) CommonUpdate(msg tea.Msg) (tea.Model, tea.Cmd, bool) {
+func (s *State) CommonUpdate(_ tea.Msg) (tea.Model, tea.Cmd, bool) {
 	return nil, nil, false
 }
 

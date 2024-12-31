@@ -7,27 +7,17 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type AskKeySubStatus string
-
-const (
-	WaitingForInput   AskKeySubStatus = "waiting_for_input"
-	ValidatingGameKey AskKeySubStatus = "validating_game_key"
-	ShowError         AskKeySubStatus = "show_error"
-)
-
 type AskKeyModel struct {
 	*State
 	InputGameKey string
 	ErrorMessage string
-	SubStatus    AskKeySubStatus
 	Text         textinput.Model // the input box
 }
 
 func NewAskKeyModel(state *State) *AskKeyModel {
 	return &AskKeyModel{
-		State:     state,
-		Text:      textinput.New(),
-		SubStatus: WaitingForInput,
+		State: state,
+		Text:  textinput.New(),
 	}
 }
 
