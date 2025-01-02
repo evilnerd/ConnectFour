@@ -159,15 +159,17 @@ func (m PlayGameModel) renderGameBoard() string {
 			styles.Subdued.Render(" and ")+
 			styles.Value.Render(m.GameInfo.Player2Name),
 		// Whose turn is it
-		styles.Subdued.Render("Player turn: ")+styles.Value.Render(m.GameInfo.PlayerTurnName),
+		styles.Label.Render("Player turn: ")+styles.Value.Render(m.GameInfo.PlayerTurnName),
 	))
 
+	b.WriteRune('\n')
+	b.WriteRune('\n')
 	if m.myTurn() {
 		b.WriteString(strings.Repeat(" ", (m.selectedCol*2)+1))
 		b.WriteString(m.renderDiscWithColor(m.currentPlayer))
 		b.WriteRune('\n')
 	} else {
-		b.WriteString(styles.Subdued.Render("Waiting for other player move"))
+		b.WriteString(styles.Label.Render("Waiting for other player move"))
 		b.WriteRune('\n')
 	}
 	for row := 0; row < game.BoardHeight; row++ {

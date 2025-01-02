@@ -15,10 +15,15 @@ type AskKeyModel struct {
 }
 
 func NewAskKeyModel(state *State) *AskKeyModel {
-	return &AskKeyModel{
+	m := &AskKeyModel{
 		State: state,
 		Text:  textinput.New(),
 	}
+	m.Text.Placeholder = "Your name"
+	m.Text.Focus()
+	m.Text.CharLimit = 14
+	m.Text.Width = 20
+	return m
 }
 
 func (m AskKeyModel) BreadCrumb() string {
@@ -33,16 +38,14 @@ func (m AskKeyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c":
-			return m, QuitCmd
-		case "esc", "q":
-			return m, BackCmd
+		case "esc", "ctrl+c":
+			return m.PreviousModel()
 		case "enter":
 			m.Key = m.Text.Value()
 			return m.NextModel()
 		}
 	}
-	m.Text.Update(msg)
+	m.Text, _ = m.Text.Update(msg)
 	return m, nil
 }
 

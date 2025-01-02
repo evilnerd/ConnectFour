@@ -1,11 +1,11 @@
 package models
 
 import (
-	"connectfour/server"
 	"fmt"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"strings"
 )
 
 type AskNameModel struct {
@@ -48,12 +48,14 @@ func (m AskNameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 
 		switch msg.String() {
-		case "escape", "ctrl+c":
+		case "esc", "ctrl+c":
 			return m.PreviousModel()
 
 		case "enter":
-			m.PlayerName = m.Text.Value()
-			return m.NextModel()
+			if isValidName(m.Text.Value()) {
+				m.PlayerName = m.Text.Value()
+				return m.NextModel()
+			}
 		}
 	}
 
@@ -62,10 +64,9 @@ func (m AskNameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-type GameStateMsg struct {
-	tea.Msg
-	status       server.GameStatus
-	errorMessage string
+func isValidName(val string) bool {
+	l := len(strings.TrimSpace(val))
+	return l > 2 && l <= 100
 }
 
 func (m AskNameModel) View() string {
