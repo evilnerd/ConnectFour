@@ -21,3 +21,8 @@
 # Go workspace file
 go.work
 
+# database password files
+*user.txt
+
+# log files
+*.log

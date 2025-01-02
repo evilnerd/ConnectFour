@@ -75,7 +75,7 @@ qua rad rag rah rai raj ram ran rap ras rat raw rax ray reb rec red ree
 ref reg rei rem rep res ret rev rex rho ria rib rid rif rig rim rin rip
 rob roc rod roe rom rot row rub rue rug rum run rut rya rye sab sac sad
 sae sag sal sap sat sau saw sax say sea sec see seg sei sel sen ser set
-sew sex sha she shh shy sib sic sim sin sip sir sis sit six ska ski sky
+sew sha she shh shy sib sic sim sin sip sir sis sit six ska ski sky
 sly sob sod sol som son sop sos sot sou sow sox soy spa spy sri sty sub
 sue suk sum sun sup suq syn tab tad tae tag taj tam tan tao tap tar tas
 tat tau tav taw tax tea ted tee teg tel ten tet tew the tho thy tic tie
@@ -96,7 +96,7 @@ agly agma agog agon ague ahed ahem ahis ahoy aide aids ails aims ains
 airn airs airt airy aits ajar ajee akee akin alae alan alar alas alba
 albs alec alee alef ales alfa alga alif alit alky alls ally alma alme
 alms aloe alow alps also alto alts alum amah amas ambo amen amia amid
-amie amin amir amis ammo amok amps amus amyl anal anas ands anes anew
+amie amin amir amis ammo amok amps amus amyl anas ands anes anew
 anga anil anis ankh anna anoa anon ansa anta ante anti ants anus aped
 aper apes apex apod apos apps apse aqua arak arbs arch arco arcs area
 ares arfs aria arid aril arks arms army arse arts arty arum arvo aryl
@@ -137,7 +137,7 @@ cool coon coop coos coot cope cops copy cord core corf cork corm corn
 cors cory cosh coss cost cosy cote cots coup cove cowl cows cowy coxa
 coys cozy crab crag cram crap craw cred crew crib cris crit croc crop
 crow crud crus crux cube cubs cuds cued cues cuff cuif cuke cull culm
-cult cunt cups curb curd cure curf curl curn curr curs curt cusk cusp
+cult cups curb curd cure curf curl curn curr curs curt cusk cusp
 cuss cute cuts cwms cyan cyma cyme cyst czar dabs dace dada dado dads
 daff daft dago dags dahl dahs dais daks dale dals dame damn damp dams
 dang dank dans daps darb dare dark darn dart dash data date dato daub
@@ -145,7 +145,7 @@ daut davy dawk dawn daws dawt days daze dead deaf deal dean dear debs
 debt deck deco deed deem deep deer dees deet defi deft defy deil deke
 dele delf deli dell dels delt deme demo demy dene deni dens dent deny
 dere derm desk deva devs dews dewy dexy deys dhak dhal dhow dial dibs
-dice dick dido didy died diel dies diet diff difs digs dike dill dime
+dice dido didy died diel dies diet diff difs digs dike dill dime
 dims dine ding dink dino dins dint diol dips dipt dire dirk dirl dirt
 disc dish disk diss dita dite dits ditz diva dive djin doat doby dock
 docs dodo doer does doff doge dogs dogy doit dojo dole doll dols dolt
@@ -284,7 +284,7 @@ pipe pips pipy pirn pish piso piss pita pith pits pity pixy plan plat
 play plea pleb pled plew plex plie plod plop plot plow ploy plug plum
 plus pock poco pods poem poet pogy pois poke poky pole poll polo pols
 poly pome pomo pomp poms pond pone pong pons pony pood poof pooh pool
-poon poop poor poos pope pops pore pork porn port pose posh post posy
+poon poor poos pope pops pore pork port pose posh post posy
 pots pouf pour pout pows poxy pram prao prat prau pray pree prep prex
 prey prez prig prim proa prod prof prog prom prop pros prow psis psst
 ptui pubs puce puck puds puff pugh pugs puja puke pula pule puli pull
