@@ -1,8 +1,8 @@
 package main
 
 import (
-	"connectfour/client/console/backend"
-	. "connectfour/client/console/models"
+	"connectfour/internal/client/console/backend"
+	. "connectfour/internal/client/console/models"
 	"flag"
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"connectfour/cmd/server/handlers"
+	handlers2 "connectfour/internal/handlers"
 	"fmt"
 	"net/http"
 	"os"
@@ -38,24 +38,30 @@ func main() {
 	//r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.NoCache)
+	r.Use(middleware.Throttle(100))
 
 	// Set a timeout value on the request context (ctx), that will signal
 	// through ctx.Done() that the request has timed out and further
 	// processing should be stopped.
 	r.Use(middleware.Timeout(60 * time.Second))
 
-	// Create routes
+	// Create public routes
 	r.Route("/", func(r chi.Router) {
-		r.Get("/", handlers.Greet)
-		r.Post("/game", handlers.NewGame)             // POST /game
-		r.Post("/game/{key}/join", handlers.JoinGame) // POST /game/1234abcd
-		r.Post("/game/{key}/play", handlers.PlayMove)
-		r.Get("/game/{key}", handlers.GameState) // GET /game/1234abcd
-		r.Get("/game", handlers.AllGames)        // GET /game
+		r.Get("/", handlers2.GreetHandler)             // GET /
+		r.Post("/login", handlers2.LoginHandler)       // POST /login
+		r.Post("/register", handlers2.RegisterHandler) // POST /login
 	})
 
-	// Mount the admin sub-router
-	//r.Mount("/admin", adminRouter())
+	// Create routes that need authentication, so they check for the jwt token to be there
+	r.Route("/games", func(r chi.Router) {
+		r.Use(handlers2.JwtValidation)
+		r.Get("/", handlers2.AllGamesHandler)            // GET  /games
+		r.Post("/", handlers2.NewGameHandler)            // POST /games
+		r.Get("/{key}", handlers2.GameStateHandler)      // GET  /games/1234abcd
+		r.Post("/{key}/join", handlers2.JoinGameHandler) // POST /games/1234abcd/join
+		r.Post("/{key}/play", handlers2.PlayMoveHandler) // POST /games/1234abcd/play
+	})
+
 	port, ok := os.LookupEnv("CONNECT_FOUR_SERVER_PORT")
 	if !ok {
 		port = "8443"
@@ -63,6 +69,6 @@ func main() {
 	log.Printf("Starting on port %s...\n", port)
 	err := http.ListenAndServe(":"+port, r)
 	if err != nil {
-		fmt.Printf("Error while running the server: %v", err)
+		fmt.Printf("Error while running the api: %v", err)
 	}
 }
