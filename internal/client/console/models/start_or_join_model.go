@@ -18,15 +18,16 @@ func (m StartOrJoinModel) BreadCrumb() string {
 
 func NewStartOrJoinModel(state *State) *StartOrJoinModel {
 	options := []list.Item{
-		console.NewOption("1", "1. Create new private model", "Creates a new model that will not be public, so you must share the key."),
-		console.NewOption("2", "2. Create new public model", "Creates a new model that's going to be listed and open for anyone to join."),
-		console.NewOption("3", "3. Join a private model", "Join a model that's not listed, but that you received a key for."),
-		console.NewOption("4", "4. Join a public model", "Browse the list of games and join one (this will fetch the list of games)."),
+		console.NewOption("1", "1. List my active games", "Lists the games you are participating in, for you to continue."),
+		console.NewOption("2", "2. Create new private game", "Creates a new game that will not be public, so you must share the key."),
+		console.NewOption("3", "3. Create new public game", "Creates a new game that's going to be listed and open for anyone to join."),
+		console.NewOption("4", "4. Join a private game", "Join a game that's not listed, but that you received a key for."),
+		console.NewOption("5", "5. Join a public game", "Browse the list of games and join one (this will fetch the list of games)."),
 	}
 
 	delegate := list.NewDefaultDelegate()
-	l := list.New(options, delegate, 60, 14)
-	l.Title = "Kind of model"
+	l := list.New(options, delegate, 120, 18)
+	l.Title = "Kind of game"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.SetShowPagination(false)
@@ -44,13 +45,19 @@ func (m StartOrJoinModel) Init() tea.Cmd {
 }
 
 func (m StartOrJoinModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
+	i := m.List.Index()
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "esc", "ctrl+c", "q":
+			return m.PreviousModel()
 
 		case "enter":
-			m.IsNewGame = m.List.Index() < 2
-			m.IsPrivateGame = m.List.Index() == 0 || m.List.Index() == 2
+			m.IsContinue = i == 0
+			m.IsNewGame = i == 1 || i == 2
+			m.IsPrivateGame = i == 1 || i == 3
 
 			return m.NextModel()
 		}
@@ -63,7 +70,7 @@ func (m StartOrJoinModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m StartOrJoinModel) View() string {
 	view := lipgloss.JoinVertical(lipgloss.Left,
-		styles.Description.Render("What kind of model do you want to start?"),
+		styles.Description.Render("What would you like to do?"),
 		m.List.View(),
 	)
 	return m.CommonView(view)

@@ -54,16 +54,16 @@ func (m AskKeyModel) View() string {
 	view := ""
 	if m.InputGameKey == "" && m.ErrorMessage == "" {
 		view = lipgloss.JoinVertical(lipgloss.Left,
-			styles.Label.Render("Enter the private model key that was shared with you"),
+			styles.Label.Render("Enter the private game key that was shared with you"),
 			m.Text.View(),
 		)
 	} else {
 		if m.ErrorMessage != "" {
 			view = styles.Label.Render(m.ErrorMessage) + "\n"
 		} else if m.GameStatus == model.Unknown {
-			view = styles.Subdued.Render("Looking for that model...\n")
+			view = styles.Subdued.Render("Looking for that game...\n")
 		} else {
-			view = styles.Subdued.Render("The model status is " + string(m.GameStatus) + "\n")
+			view = styles.Subdued.Render("The game status is " + string(m.GameStatus) + "\n")
 		}
 		view = lipgloss.JoinVertical(lipgloss.Left,
 			styles.Label.Render("Game key ")+styles.Value.Render(m.InputGameKey),

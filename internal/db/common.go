@@ -3,21 +3,31 @@ package db
 import (
 	"database/sql"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 // readSecret reads a Docker secret from the designated location and returns the contents of the file as a string.
 func readSecret(name string) string {
-
-	// TODO: Implement reading the Docker secret or a local file
-	return "dfjh4587fBBFgnjkfgno3mocopc0"
+	file := os.Getenv(name)
+	b, err := os.ReadFile(file)
+	if err != nil {
+		log.Fatalf("Reading secret: %v\n", err)
+	}
+	return string(b)
 }
 
 func connect() *sql.DB {
-	var secret = readSecret("secret")
-	db, err := sql.Open("mysql", "connectfour:"+secret+"@tcp(0.0.0.0:3306)/connectfour?parseTime=true")
+	log.Infoln("Connecting to DB...")
+	secret := readSecret("MARIADB_PASSWORD_FILE")
+	user := os.Getenv("MARIADB_USER")
+	schema := os.Getenv("MARIADB_DATABASE")
+	address := os.Getenv("MARIADB_ADDRESS")
+	datasource := user + ":" + secret + "@" + address + "/" + schema + "?parseTime=true"
+	db, err := sql.Open("mysql", datasource)
 
 	if err != nil {
 		log.Fatalf("Error connecting to the database: %v\n", err)
 	}
+	log.Infoln("Connected.")
 	return db
 }

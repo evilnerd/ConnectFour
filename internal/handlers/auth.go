@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"connectfour/internal/service"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt"
@@ -10,7 +11,7 @@ import (
 	"time"
 )
 
-var secretKey = []byte("connectfour is the ultimate model")
+var secretKey = []byte("connectfour is the ultimate game")
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req service.LoginRequest
@@ -27,7 +28,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if verifyPassword(req.Password, user.Token) {
-		tokenString, err := createToken(user.Email)
+		tokenString, err := createToken(user.Email, user.Name)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte("Internal api error while creating JWT"))
@@ -65,7 +66,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// All is good, let's create the user.
-	if user, err := userService.CreateUser(req.Email, req.Name, req.Password); err != nil {
+	if user, err := userService.CreateUser(req.Email, req.Name, hashPassword(req.Password)); err != nil {
 		errorResponse(w, "User creation failed", http.StatusInternalServerError)
 		return
 	} else {
@@ -76,14 +77,20 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func verifyPassword(password, hash string) bool {
-	// TODO: implement proper hashing.
-	return password == hash
+	return hashPassword(password) == hash
 }
 
-func createToken(email string) (string, error) {
+func hashPassword(password string) string {
+	// create sha256 hash of specified password
+	h := sha256.Sum256([]byte(password))
+	return fmt.Sprintf("%x", h)
+}
+
+func createToken(email string, name string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"email": email,
+			"name":  name,
 			"exp":   time.Now().Add(time.Hour * 24).Unix(),
 		})
 

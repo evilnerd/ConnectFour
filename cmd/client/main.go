@@ -18,17 +18,19 @@ func main() {
 	}
 	defer file.Close()
 
+	var key string
+	var enableJwtFileStorage bool
+	//	flag.StringVar(&m.PlayerName, "credentials", "", "Pre-specify the user's credentials to skip the first step (use the form email:password, e.g. --credentials player@email.com:thepassword).")
+	flag.StringVar(&key, "key", "", "Pre-specify the game key to join.")
+	flag.BoolVar(&enableJwtFileStorage, "store-credentials", true, "Enable jwt file storage (disable to force login screen)")
+	flag.Parse()
+
 	// Check settings
-	backend.CheckSettings()
+	backend.InitWebClient()
 
 	log.Println("Creating new program!")
-	m := CreateModels()
+	m := CreateModels(key, enableJwtFileStorage)
 	p := tea.NewProgram(m)
-	p.SetWindowTitle("ConnectFour Online - The Console Edition")
-
-	flag.StringVar(&m.PlayerName, "name", "", "Pre-specify the user's name to skip the first step.")
-	flag.StringVar(&m.Key, "key", "", "Pre-specify the game key to join.")
-	flag.Parse()
 
 	if _, err := p.Run(); err != nil {
 		fmt.Println("Error running startup form: ", err)

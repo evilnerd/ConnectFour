@@ -28,7 +28,7 @@ func TestGame_Join_NotOkIfStateBeyondCreated(t *testing.T) {
 	// Act
 	err := game.Join(player2)
 	// Assert
-	assert.Error(t, err, "Expected to get an error when joining a model that has already started")
+	assert.Error(t, err, "Expected to get an error when joining a game that has already started")
 }
 
 func TestGame_Join_SetsStatusToStarted_AndSecondPlayerName(t *testing.T) {
@@ -40,7 +40,7 @@ func TestGame_Join_SetsStatusToStarted_AndSecondPlayerName(t *testing.T) {
 
 	// Assert
 	assert.NoError(t, err)
-	assert.Equal(t, Started, game.Status, "Expected that the model status has been progressed to 'StartedAt'")
+	assert.Equal(t, Started, game.Status, "Expected that the game status has been progressed to 'StartedAt'")
 	assert.Equal(t, player2, game.Player2, "Expected the Player 2 name to be set")
 	assert.Equal(t, 1, game.PlayerTurn)
 	assert.NotNilf(t, game.StartedAt, "Expected the started time to be set")
@@ -57,8 +57,8 @@ func TestGame_Play_NotOkIfStateIsNotStarted(t *testing.T) {
 	err2 := game2.Play(player1, 1)
 
 	// Assert
-	assert.Error(t, err1, "Expected an error for model 1 since the model hasn't started yet")
-	assert.Error(t, err2, "Expected an error for model 2 since the model has already finished")
+	assert.Error(t, err1, "Expected an error for game 1 since the game hasn't started yet")
+	assert.Error(t, err2, "Expected an error for game 2 since the game has already finished")
 
 }
 
@@ -71,7 +71,7 @@ func TestGame_Play_OkIfGameIsStarted(t *testing.T) {
 	err := game.Play(player1, 1)
 
 	// Assert
-	assert.Nil(t, err, "Expected no error since the model should be in the right state to play.")
+	assert.Nil(t, err, "Expected no error since the game should be in the right state to play.")
 }
 
 func TestGame_Play_SetsOtherPlayerMove(t *testing.T) {

@@ -29,18 +29,23 @@ type StepNode struct {
 type Step string
 
 type State struct {
-	CurrentStep   *StepNode
-	CurrentModel  ConnectFourModel
-	Key           string
-	PlayerName    string
-	GameStatus    model.GameStatus
-	GameInfo      service.GameStateResponse
-	IsNewGame     bool
-	IsPrivateGame bool
-	Loading       bool
+	CurrentStep        *StepNode
+	CurrentModel       ConnectFourModel
+	Key                string
+	PlayerName         string
+	PlayerEmail        string
+	GameStatus         model.GameStatus
+	GameInfo           service.GameStateResponse
+	IsNewGame          bool
+	IsPrivateGame      bool
+	IsContinue         bool // When the game mode is to continue a running game.
+	MustReauthenticate bool // Set when the JWT expires or is invalid somehow.
+	NoAuthStorage      bool // Set as a cmd arg flag to indicate we should not load nor save the JWT (for testing)
+	wc                 *backend.WebClient
 }
 
 var (
+	wc               *backend.WebClient
 	state            *State
 	askKeyModel      AskKeyModel
 	askNameModel     AskNameModel
@@ -52,13 +57,23 @@ var (
 	startOrJoinModel StartOrJoinModel
 )
 
-func CreateModels() *MainModel {
+func CreateModels(key string, storeInFile bool) *MainModel {
+	args := []backend.WebClientOption{
+		backend.WithBaseUrl(backend.ServerUrl),
+		backend.WithStoreInFile(storeInFile, backend.JwtFileName()),
+		backend.WithReAuthCallback(func() {
+			ReAuthenticate(state)
+		}),
+	}
 
+	wc, _ = backend.NewWebClient(args...)
 	state = &State{
 		CurrentStep: &StepNode{
 			BreadCrumb: "Start",
 			Previous:   nil,
 		},
+		Key: key,
+		wc:  wc,
 	}
 
 	mainModel = *NewMainModel(state)
@@ -80,24 +95,25 @@ func (s *State) CantContinueModel(message string) (tea.Model, tea.Cmd) {
 	return exitModel, tea.Quit
 }
 
-func (s *State) SkipAskName() {
+func (s *State) SkipAskLogin() {
 	log.Printf("Skip name step, argument passed: -name %s\n", s.PlayerName)
 	s.CurrentModel = startOrJoinModel
 }
 
 func (s *State) SkipAskKey() {
-	log.Printf("Skip model mode/ model select steps, argument passed: -key %s\n", s.Key)
+	log.Printf("Skip game mode/ game select steps, argument passed: -key %s\n", s.Key)
 	s.CurrentModel = playGameModel
 }
 
 func (s *State) PreviousModel() (tea.Model, tea.Cmd) {
 	var prevModel ConnectFourModel = askNameModel
 	var prevCmd tea.Cmd
-
+	if s.MustReauthenticate {
+		return prevModel, nil
+	}
 	switch (s.CurrentModel).(type) {
-	case AskNameModel:
+	case AskNameModel, StartOrJoinModel:
 		prevModel = exitModel
-		prevCmd = tea.Quit
 	case AskKeyModel:
 		prevModel = askNameModel
 	case PlayGameModel:
@@ -111,10 +127,11 @@ func (s *State) PreviousModel() (tea.Model, tea.Cmd) {
 }
 
 func (s *State) NextModel() (tea.Model, tea.Cmd) {
-
 	var nextModel ConnectFourModel = mainModel
 	var nextCmd tea.Cmd
-
+	if s.MustReauthenticate {
+		return askNameModel, nil
+	}
 	switch (s.CurrentModel).(type) {
 	case MainModel:
 		nextModel = askNameModel
@@ -122,26 +139,29 @@ func (s *State) NextModel() (tea.Model, tea.Cmd) {
 		nextModel = startOrJoinModel
 	case AskKeyModel:
 		nextModel = playGameModel
-		nextCmd = joinGame(s.Key, s.PlayerName)
+		nextCmd = joinGame(s.Key)
 	case StartOrJoinModel:
-		if s.IsNewGame {
+		if s.IsContinue {
+			nextModel = selectGameModel
+			nextCmd = selectGameModel.loadMyGames()
+		} else if s.IsNewGame {
 			nextModel = createGameModel
-			nextCmd = createGame(s.PlayerName, s.IsPrivateGame)
+			nextCmd = createGame(s.IsPrivateGame)
 		} else {
 			if s.IsPrivateGame {
 				nextModel = askKeyModel
 			} else {
 				nextModel = selectGameModel
-				nextCmd = loadGames
+				nextCmd = selectGameModel.loadOpenGames()
 			}
 		}
 	case CreateGameModel:
 		nextModel = playGameModel
 		nextCmd = LoadGameInfo(s.Key)
 	case SelectGameModel:
-		log.Printf("Player selected model %s, starting model...\n", s.Key)
+		log.Printf("Player selected game %s, starting game...\n", s.Key)
 		nextModel = playGameModel
-		nextCmd = joinGame(s.Key, s.PlayerName)
+		nextCmd = joinGame(s.Key)
 	}
 
 	log.Printf("[Next] Current Model = %T Next Model = %T\n", s.CurrentModel, nextModel)
@@ -165,6 +185,13 @@ func (s *State) NavigateForward(to ConnectFourModel) {
 	to.Init()
 }
 
+// ReAuthenticate sets a flag to indicate that the next model should always be the [AskNameModel]
+func ReAuthenticate(state *State) {
+	state.PlayerName = ""
+	state.PlayerEmail = ""
+	state.MustReauthenticate = true
+}
+
 // CommonUpdate handles the common update messages and key presses (enter, esc) - it returns Model and Cmd in
 // the same way that Update returns plus a boolean to indicate the calling Update can immediately return.
 func (s *State) CommonUpdate(_ tea.Msg) (tea.Model, tea.Cmd, bool) {
@@ -179,8 +206,16 @@ func (s *State) CommonView(detail string) string {
 }
 
 func (s *State) renderHeader() string {
+
+	errmsg := ""
+
+	if s.MustReauthenticate {
+		errmsg = styles.Label.Render("The server says that you need to authenticate again. So I'm going to ask for your credentials now.\n")
+	}
+
 	return lipgloss.JoinVertical(lipgloss.Left,
 		styles.AppTitle.Render("ConnectFour 0.2"),
+		styles.Error.Render(errmsg),
 		s.renderBreadCrumb(),
 	)
 }
@@ -202,7 +237,7 @@ type GameInfoMsg struct {
 // LoadGameInfo returns a Cmd that sends a GameInfoMsg when Game Info is fetched.
 func LoadGameInfo(key string) tea.Cmd {
 	return func() tea.Msg {
-		info, err := backend.GameInfo(key)
+		info, err := backend.GameInfo(wc, key)
 		msg := GameInfoMsg{
 			info: info,
 		}
@@ -216,9 +251,9 @@ func LoadGameInfo(key string) tea.Cmd {
 }
 
 // joinGame returns a Cmd that sends a tea.Msg when model is joined.
-func joinGame(key string, name string) tea.Cmd {
+func joinGame(key string) tea.Cmd {
 	return func() tea.Msg {
-		info, err := backend.Join(key, name)
+		info, err := backend.Join(wc, key)
 		msg := GameInfoMsg{
 			info: info,
 		}

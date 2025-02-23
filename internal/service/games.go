@@ -18,8 +18,6 @@ func NewGamesService(userService *UserService, gamesRepository db.GameRepository
 	}
 }
 
-var ()
-
 func init() {
 }
 
@@ -58,6 +56,23 @@ func (s GamesService) AllOpenGames(email string) []NewGameResponse {
 		if game.Public {
 			output = append(output, NewGameResponseFromGame(game))
 		}
+	}
+	return output
+}
+
+func (s GamesService) AllMyGames(email string) []NewGameResponse {
+	user, err := s.userService.FindUserByEmail(email)
+	if err != nil {
+		log.Errorf("Error finding user by email '%s': %v", email, err)
+		return []NewGameResponse{}
+	}
+	output := make([]NewGameResponse, 0)
+	games, err := s.gameRepository.List(user.Id, "")
+	if err != nil {
+		log.Errorf("Error getting games: %v\n", err)
+	}
+	for _, game := range games {
+		output = append(output, NewGameResponseFromGame(game))
 	}
 	return output
 }

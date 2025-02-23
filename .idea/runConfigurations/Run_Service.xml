@@ -4,6 +4,10 @@
     <working_directory value="$PROJECT_DIR$" />
     <envs>
       <env name="CONNECT_FOUR_SERVER_PORT" value="8443" />
+      <env name="MARIADB_ADDRESS" value="tcp(0.0.0.0:3306)" />
+      <env name="MARIADB_DATABASE" value="connectfour" />
+      <env name="MARIADB_PASSWORD_FILE" value="./build/mariadb-user.txt" />
+      <env name="MARIADB_USER" value="connectfour" />
     </envs>
     <kind value="FILE" />
     <package value="connectfour" />

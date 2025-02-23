@@ -24,7 +24,7 @@ func (m CreateGameModel) BreadCrumb() string {
 }
 
 func (m CreateGameModel) Init() tea.Cmd {
-	return createGame(m.PlayerName, m.IsPrivateGame)
+	return createGame(m.IsPrivateGame)
 }
 
 func (m CreateGameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -51,23 +51,23 @@ func (m CreateGameModel) View() string {
 
 	view := ""
 	if m.created {
-		view += styles.Label.Render("The model has been created, the key is: ") + styles.Value.Render(m.Key)
+		view += styles.Label.Render("The game has been created, the key is: ") + styles.Value.Render(m.Key)
 		view += "\n" + styles.Label.Render("Press enter to continue.")
 	} else {
-		view += styles.Value.Render("The model is being created...")
+		view += styles.Value.Render("The game is being created...")
 	}
 	return m.CommonView(lipgloss.JoinVertical(lipgloss.Left,
-		styles.Description.Render("Creating a new model"),
+		styles.Description.Render("Creating a new game"),
 		view,
 	))
 }
 
-func createGame(name string, private bool) tea.Cmd {
+func createGame(private bool) tea.Cmd {
 	return func() tea.Msg {
-		result := backend.CreateGame(name, !private)
+		result := backend.CreateGame(wc, !private)
 		if result.Key == "" {
 			// Something went wrong.
-			log.Error("Something went wrong creating the model.")
+			log.Error("Something went wrong creating the game.")
 		}
 		return GameCreated{game: result}
 	}

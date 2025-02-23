@@ -13,6 +13,7 @@ type AppStyles struct {
 	BreadCrumbSeparator lipgloss.Style
 	Page                lipgloss.Style
 	Description         lipgloss.Style
+	Error               lipgloss.Style
 }
 
 // NewAppStyles returns style definitions for the app. So that we can refer to styles by name and manage them
@@ -50,6 +51,8 @@ func NewAppStyles() (s AppStyles) {
 	s.Description = s.Label.Copy().
 		Padding(0, 0, 1, 0).
 		Background(lipgloss.AdaptiveColor{Light: "#222", Dark: "DDD"})
+
+	s.Error = s.Description
 
 	return s
 }

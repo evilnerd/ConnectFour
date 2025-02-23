@@ -24,11 +24,19 @@ Authorization: Bearer {{ auth_token2 }}
 
 ### List all public games
 GET {{host}}:{{port}}/games
+Content-Type: application/json
+Authorization: Bearer {{ auth_token2 }}
+
+### List MY games
+GET {{host}}:{{port}}/games/my
+Content-Type: application/json
+Authorization: Bearer {{ auth_token2 }}
+
 
 ### Play a move
 POST {{host}}:{{port}}/games/{{game_key}}/play
 Content-Type: application/json
-Authorization: Bearer {{ auth_token }}
+Authorization: Bearer {{ auth_token2 }}
 
 {
   "column": 1

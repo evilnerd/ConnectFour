@@ -8,7 +8,7 @@ Content-Type: application/json
 
 {
     "name": "Dick",
-    "email": "dick@evilnerd.com",
+    "email": "dick@evilnerd.nl",
     "password": "dick"
 }
 
@@ -20,6 +20,16 @@ Content-Type: application/json
   "name": "Sanae",
   "email": "sanae@evilnerd.nl",
   "password": "sanae"
+}
+
+### CREATE THIRD USER
+POST {{host}}:{{port}}/register
+Content-Type: application/json
+
+{
+  "name": "Lucy",
+  "email": "lucy@evilnerd.nl",
+  "password": "lucy"
 }
 
 ### TEST LOGIN - FAIL
@@ -36,7 +46,7 @@ POST {{host}}:{{port}}/login
 Content-Type: application/json
 
 {
-  "email": "dick.appel@gmail.com",
+  "email": "dick@evilnerd.nl",
   "password": "appel"
 }
 

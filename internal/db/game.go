@@ -4,6 +4,7 @@ import (
 	"connectfour/internal/model"
 	"database/sql"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 type MariaDbGameRepository struct {
@@ -47,9 +48,9 @@ func (r MariaDbGameRepository) Fetch(key string) (model.Game, error) {
     u1.email as player1_email,
     u1.id as player1_id,
     u1.name as player1_name,
-    ifnull(u2.email, "") as player2_email,
+    ifnull(u2.email, '') as player2_email,
     ifnull(u2.id, 0) as player2_id,
-    ifnull(u2.name, "") as player2_name,
+    ifnull(u2.name, '') as player2_name,
     g.player_turn_id, 
     g.created_at, 
     g.started_at, 
@@ -101,15 +102,14 @@ func (r MariaDbGameRepository) Fetch(key string) (model.Game, error) {
 }
 
 func (r MariaDbGameRepository) List(userId int64, status string) ([]model.Game, error) {
-	// select games that are open
-	rows, err := r.db.Query(`	SELECT 
+	baseQuery := `	SELECT 
     g.game_key, 
     u1.email as player1_email,
     u1.id as player1_id,
     u1.name as player1_name,
-    ifnull(u2.email, "") as player2_email,
+    ifnull(u2.email, '') as player2_email,
     ifnull(u2.id, 0) as player2_id,
-    ifnull(u2.name, "") as player2_name,
+    ifnull(u2.name, '') as player2_name,
     g.player_turn_id, 
     g.created_at, 
     g.started_at, 
@@ -118,8 +118,28 @@ func (r MariaDbGameRepository) List(userId int64, status string) ([]model.Game, 
     g.public 
 	FROM game g
 	JOIN user u1 ON u1.id = g.player1_id
-	LEFT JOIN user u2 ON u2.id = g.player2_id
-	WHERE status = ? `, status)
+	LEFT JOIN user u2 ON u2.id = g.player2_id`
+
+	args := make([]interface{}, 0)
+
+	if status != "" || userId > 0 {
+		baseQuery = baseQuery + " WHERE "
+	}
+
+	criteria := make([]string, 0)
+
+	if status != "" {
+		criteria = append(criteria, "(status = ?)")
+		args = append(args, status)
+	}
+
+	if userId > 0 {
+		criteria = append(criteria, "(g.player1_id = ? || g.player2_id = ?)")
+		args = append(args, userId, userId)
+	}
+
+	// select games that are open
+	rows, err := r.db.Query(baseQuery+strings.Join(criteria, " AND "), args...)
 
 	if err == nil {
 		err = rows.Err()

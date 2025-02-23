@@ -8,10 +8,6 @@ import (
 // BackStepMsg is sent when the user pressed ESC.
 type BackStepMsg struct{}
 
-func BackCmd() tea.Msg {
-	return BackStepMsg{}
-}
-
 // QuitMsg is sent when the user pressed ctrl-c
 type QuitMsg struct{}
 
@@ -27,3 +23,9 @@ type GameCreated struct {
 	game service.NewGameResponse
 }
 type Connected struct{}
+
+type LoginMsg struct {
+	isValid      bool
+	errorMessage string
+	jwtToken     string
+}

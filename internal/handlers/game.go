@@ -16,10 +16,16 @@ func GameStateHandler(response http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func AllGamesHandler(response http.ResponseWriter, request *http.Request) {
+func OpenGamesHandler(response http.ResponseWriter, request *http.Request) {
 	log.Debug("Listing all games")
 	email := emailFromContext(request)
 	marshal(gamesService.AllOpenGames(email), response)
+}
+
+func MyGamesHandler(response http.ResponseWriter, request *http.Request) {
+	log.Debug("Listing all my games")
+	email := emailFromContext(request)
+	marshal(gamesService.AllMyGames(email), response)
 }
 
 func NewGameHandler(response http.ResponseWriter, request *http.Request) {

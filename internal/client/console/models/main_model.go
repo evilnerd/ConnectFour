@@ -60,10 +60,7 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m MainModel) View() string {
 	var b strings.Builder
 
-	if !m.hasValidFlags() {
-		b.WriteString("If you specify the key of a model to join, then you must also specify the player's name.")
-		b.WriteRune('\n')
-	} else if !m.ConnectionTested {
+	if !m.ConnectionTested {
 		b.WriteString(styles.Label.Render("Checking connection..."))
 		b.WriteRune('\n')
 	} else if m.ConnectionError != "" {
@@ -75,10 +72,13 @@ func (m MainModel) View() string {
 }
 
 func (m MainModel) Init() tea.Cmd {
-	cmd := Connect()
+
+	cmd := tea.Batch(
+		Connect(),
+		tea.SetWindowTitle("ConnectFour Online - The Console Edition"))
 
 	if m.PlayerName != "" {
-		m.SkipAskName()
+		m.SkipAskLogin()
 	}
 
 	if m.Key != "" {
@@ -88,7 +88,7 @@ func (m MainModel) Init() tea.Cmd {
 			return tea.Quit
 		}
 		m.SkipAskKey()
-		cmd = joinGame(m.Key, m.PlayerName)
+		cmd = joinGame(m.Key)
 	}
 
 	log.Printf("Init for model %T\n", m.CurrentModel)

@@ -93,7 +93,7 @@ func JwtValidation(next http.Handler) http.Handler {
 				errorResponse(w, "Invalid expiration time", http.StatusUnauthorized)
 				return
 			}
-			if time.Unix(int64(exp), 0).Before(time.Now()) {
+			if expired(exp) {
 				errorResponse(w, "Token is expired", http.StatusUnauthorized)
 				return
 			}
@@ -104,4 +104,9 @@ func JwtValidation(next http.Handler) http.Handler {
 			errorResponse(w, "Invalid token", http.StatusUnauthorized)
 		}
 	})
+
+}
+
+func expired(exp float64) bool {
+	return time.Unix(int64(exp), 0).Before(time.Now())
 }

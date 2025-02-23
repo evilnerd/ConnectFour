@@ -15,6 +15,11 @@ var (
 	user2 = model.User{Name: "Sanae", Email: "sanae@evilnerd.nl", Token: "secret123"}
 )
 
+func init() {
+	user1.Id = 1
+	user2.Id = 2
+}
+
 func TestUserService_CreateUser(t *testing.T) {
 	// Arrange
 	expected := user1

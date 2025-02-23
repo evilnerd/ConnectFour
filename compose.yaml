@@ -16,9 +16,15 @@ services:
     secrets:
       - mariadb-user
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
     ports:
-      - "8080:8080"
+      - ${SERVER_PORT}
+    environment:
+      MARIADB_PASSWORD_FILE: /run/secrets/mariadb-user
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_ADDRESS: ${MARIADB_ADDRESS}
 
   mariadb:
     image: mariadb:latest
@@ -36,3 +42,9 @@ services:
       MARIADB_PASSWORD_FILE: /run/secrets/mariadb-user
       MARIADB_USER: connectfour
       MARIADB_DATABASE: connectfour
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 3

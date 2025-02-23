@@ -37,7 +37,7 @@ func (m SelectGameModel) BreadCrumb() string {
 	return "Select"
 }
 func (m SelectGameModel) Init() tea.Cmd {
-	return loadGames
+	return m.loadOpenGames()
 }
 
 func (m SelectGameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -88,14 +88,23 @@ func (m SelectGameModel) View() string {
 	}
 
 	return m.CommonView(lipgloss.JoinVertical(lipgloss.Left,
-		styles.Description.Render("Choose a model to (re-)join"),
+		styles.Description.Render("Choose a game to (re-)join"),
 		contents,
 	))
 }
 
-func loadGames() tea.Msg {
-	games := backend.JoinableGames()
-	return GamesFetched{games: games}
+func (m SelectGameModel) loadOpenGames() tea.Cmd {
+	return func() tea.Msg {
+		games := backend.JoinableGames(m.wc)
+		return GamesFetched{games: games}
+	}
+}
+
+func (m SelectGameModel) loadMyGames() tea.Cmd {
+	return func() tea.Msg {
+		games := backend.MyGames(m.wc)
+		return GamesFetched{games: games}
+	}
 }
 
 func initGamesList(m *SelectGameModel) {
