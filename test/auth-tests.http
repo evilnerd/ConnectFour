@@ -1,0 +1,74 @@
+### GET request see if server is up
+GET {{host}}:{{port}}
+
+
+### CREATE USER
+POST {{host}}:{{port}}/register
+Content-Type: application/json
+
+{
+    "name": "Dick",
+    "email": "dick@evilnerd.nl",
+    "password": "dick"
+}
+
+### CREATE SECOND USER
+POST {{host}}:{{port}}/register
+Content-Type: application/json
+
+{
+  "name": "Sanae",
+  "email": "sanae@evilnerd.nl",
+  "password": "sanae"
+}
+
+### CREATE THIRD USER
+POST {{host}}:{{port}}/register
+Content-Type: application/json
+
+{
+  "name": "Lucy",
+  "email": "lucy@evilnerd.nl",
+  "password": "lucy"
+}
+
+### TEST LOGIN - FAIL
+POST {{host}}:{{port}}/login
+Content-Type: application/json
+
+{
+  "email": "dick.appel@gmail.com",
+  "password": "peer"
+}
+
+### TEST LOGIN - PASS - FIRST PLAYER
+POST {{host}}:{{port}}/login
+Content-Type: application/json
+
+{
+  "email": "dick@evilnerd.nl",
+  "password": "appel"
+}
+
+> {%
+    client.global.set("auth_token", response.body);
+ %}
+
+### TEST LOGIN - SECOND PLAYER
+POST {{host}}:{{port}}/login
+Content-Type: application/json
+
+{
+  "email": "sanae@evilnerd.nl",
+  "password": "sanae"
+}
+
+> {%
+    client.global.set("auth_token2", response.body);
+%}
+
+### GET GAMES (SECURED)
+GET {{host}}:{{port}}/games
+Content-Type: application/json
+Authorization: Bearer {{ auth_token }}
+

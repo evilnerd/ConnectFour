@@ -6,7 +6,7 @@
 
 ################################################################################
 # Create a stage for building the application.
-ARG GO_VERSION=1.22
+ARG GO_VERSION=1.23
 FROM golang:${GO_VERSION} AS build
 WORKDIR /src
 
@@ -66,7 +66,7 @@ USER appuser
 COPY --from=build /bin/server /bin/
 
 # Expose the port that the application listens on.
-EXPOSE 8080
+EXPOSE 8443
 
 # What the container should run when it is started.
 ENTRYPOINT [ "/bin/server" ]

@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Run Client" type="GoApplicationRunConfiguration" factoryName="Go Application" singleton="false">
+    <module name="ConnectFour" />
+    <working_directory value="$PROJECT_DIR$" />
+    <parameters value="--store-credentials=false" />
+    <kind value="FILE" />
+    <package value="connectfour" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/cmd/client/main.go" />
+    <pty_enabled value="true" />
+    <method v="2" />
+  </configuration>
+</component>
