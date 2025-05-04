@@ -36,7 +36,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprintf(w, tokenString)
+		_, _ = fmt.Fprint(w, tokenString)
 		return
 	} else {
 		w.WriteHeader(http.StatusUnauthorized)

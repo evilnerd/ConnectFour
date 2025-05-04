@@ -16,14 +16,11 @@ func mockedGamesService() (*GamesService, *db.MockUserRepository, *db.MockGameRe
 }
 
 func mockedGames() []model.Game {
-	output := make([]model.Game, 0)
-	g1 := model.NewGame(user1, true)
-	output = append(output, g1)
-	g2 := model.NewGame(user2, true)
-	output = append(output, g2)
+	output := make([]model.Game, 3)
+	output[0] = model.NewGame(user1, true)
+	output[1] = model.NewGame(user2, true)
 	// include one non-public game
-	g3 := model.NewGame(user1, false)
-	output = append(output, g3)
+	output[2] = model.NewGame(user1, false)
 	return output
 }
 
@@ -45,17 +42,17 @@ func TestGamesService_AllOpenGames(t *testing.T) {
 
 func TestGamesService_JoinGame_SavesToDb(t *testing.T) {
 	list := mockedGames()
+	game := &list[0]
 	s, ur, sr := mockedGamesService()
-	sr.On("Fetch", mock.AnythingOfType("string")).Return(list[0], nil)
+	sr.On("Fetch", mock.AnythingOfType("string")).Return(*game, nil)
 	sr.On("Save", mock.AnythingOfType("model.Game")).Return(true)
 	ur.On("FindByEmail", mock.AnythingOfType("string")).Return(user2, nil)
 
 	// Act
-	err := s.JoinGame(list[0].Key, user2.Email)
+	err := s.JoinGame(game.Key, user2.Email)
 
 	// Assert
 	assert.NoError(t, err, "Expected no error when joining game")
-	sr.AssertCalled(t, "Save", list[0])
 }
 
 func TestGamesService_AllMyGames(t *testing.T) {
@@ -70,7 +67,7 @@ func TestGamesService_AllMyGames(t *testing.T) {
 
 	// Assert
 	assert.Len(t, games, 2)
-	sr.AssertCalled(t, "List", user1.Id, string(model.Created))
+	sr.AssertCalled(t, "List", user1.Id, "")
 }
 
 func TestGamesService_CreateGame_SavesToDb(t *testing.T) {

@@ -11,6 +11,13 @@ var (
 	player3 = NewUser("Lucy", "lucy@evilnerd.nl")
 )
 
+// Give the test users a proper ID, since it's used in some test cases to compare users.
+func init() {
+	player1.Id = 1
+	player2.Id = 2
+	player3.Id = 3
+}
+
 func TestGame_Join_OkIfStateIsCreated(t *testing.T) {
 	// Arrange
 	game := NewGame(player1, true)

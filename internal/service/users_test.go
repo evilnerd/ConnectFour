@@ -23,8 +23,10 @@ func init() {
 func TestUserService_CreateUser(t *testing.T) {
 	// Arrange
 	expected := user1
+	expected.Id = 0
 
 	repo := db.NewMockUserRepository()
+	repo.On("FindByEmail", user1.Email).Return(model.User{}, nil)
 	repo.On("Create", expected).Return(expected, nil)
 	s := NewUserService(repo, time.Minute*5)
 
