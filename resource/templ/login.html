@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Four - Login & Games</title>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/ui/js/common.js"></script>
+    <script>
+        // Fallback in case common.js doesn't load
+        if (typeof saveToken !== 'function') {
+            console.error("common.js did not load properly - using inline fallback functions");
+            
+            // Basic fallback functions
+            function saveToken(token) {
+                console.log("Inline fallback: Saving token to localStorage");
+                try {
+                    localStorage.setItem('jwtToken', token);
+                    return true;
+                } catch (e) {
+                    console.error("Inline fallback: Error saving token", e);
+                    return false;
+                }
+            }
+            
+            function getToken() {
+                try {
+                    return localStorage.getItem('jwtToken');
+                } catch (e) {
+                    return null;
+                }
+            }
+            
+            function clearToken() {
+                try {
+                    localStorage.removeItem('jwtToken');
+                } catch (e) {}
+            }
+            
+            function isLoggedIn() {
+                return getToken() != null;
+            }
+            
+            function logout() {
+                clearToken();
+                window.location.href = '/ui';
+            }
+            
+            // Define HTMX extension
+            if (typeof htmx !== 'undefined') {
+                htmx.defineExtension('jwt-auth', {
+                    onEvent: function(name, evt) {
+                        if (name === 'htmx:configRequest') {
+                            const token = getToken();
+                            if (token) {
+                                evt.detail.headers['Authorization'] = 'Bearer ' + token;
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+    <script>
+        function updateAuthUI(loggedIn) {
+            const loginRegisterButtons = document.getElementById('login-register-buttons');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const logoutButton = document.getElementById('logout-button');
+            const welcomeMessage = document.getElementById('welcome-message');
+
+            if (loggedIn) {
+                // Hide login/register forms and show logout button
+                loginRegisterButtons.style.display = 'none';
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'none';
+                logoutButton.style.display = 'block';
+                welcomeMessage.style.display = 'block';
+            } else {
+                // Show login/register buttons and hide logout button
+                loginRegisterButtons.style.display = 'flex';
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+                logoutButton.style.display = 'none';
+                welcomeMessage.style.display = 'none';
+            }
+        }
+
+        // Initialize the UI based on token presence when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            if (isLoggedIn()) {
+                // If already logged in, redirect to games page
+                alert('logged in')
+                window.location.href = '/ui/games';
+            } else {
+                updateAuthUI(false);
+            }
+        });
+
+        // Function to handle JWT from login response
+        function handleLoginResponse(xhr) {
+            // First check if the response is a 200 OK
+            if (xhr.status === 200) {
+                try {
+                    // Try to parse as JSON first
+                    let token;
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        token = response.token;
+                    } catch (e) {
+                        // If not JSON, assume the response is the raw token
+                        token = xhr.responseText;
+                    }
+                    
+                    if (token) {
+                        saveToken(token);
+                        document.getElementById('message').innerHTML = '<span class="text-green-500">Login successful!</span>';
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error handling login response:', e);
+                }
+            }
+            return false;
+        }
+
+        // Using the logout function from common.js
+        // Additional logout handling for the login page
+        function handleLocalLogout() {
+            clearToken();
+            document.getElementById('message').innerHTML = '<span class="text-green-500">Logged out successfully</span>';
+            updateAuthUI(false);
+        }
+    </script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col" hx-ext="jwt-auth">
+<!-- Navigation Bar -->
+<div id="navigation-placeholder">
+    {{template "navigation.html" .}}
+</div>
+
+<div class="flex-grow flex items-center justify-center py-8">
+<div class="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
+    <h1 class="text-2xl font-bold text-center text-gray-800">Connect Four</h1>
+
+    <div id="welcome-message" class="mt-4 text-center text-green-600 font-semibold" style="display: none;">
+        Welcome back! You are logged in.
+    </div>
+
+    <div id="login-register-buttons" class="flex justify-center space-x-4 mt-4">
+        <button class="px-4 py-2 bg-blue-500 text-white rounded-md"
+                hx-on:click="document.getElementById('login-form').style.display='block'; document.getElementById('register-form').style.display='none';">
+            Login
+        </button>
+        <button class="px-4 py-2 bg-green-500 text-white rounded-md"
+                hx-on:click="document.getElementById('register-form').style.display='block'; document.getElementById('login-form').style.display='none';">
+            Create Account
+        </button>
+    </div>
+
+    <div id="logout-button" class="flex justify-center mt-4" style="display: none;">
+        <button class="px-4 py-2 bg-red-500 text-white rounded-md" onclick="handleLocalLogout()">
+            Logout
+        </button>
+    </div>
+
+    <div id="login-form" class="mt-6" style="display: block;">
+        <h2 class="text-xl font-semibold text-gray-700">Login</h2>
+        <form id="login-form-elem" class="space-y-4" onsubmit="event.preventDefault();">
+            <input type="email" id="login-email" name="email" placeholder="Email" required class="w-full px-3 py-2 border rounded-md" />
+            <input type="password" id="login-password" name="password" placeholder="Password" required class="w-full px-3 py-2 border rounded-md" />
+            <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded-md" 
+                    onclick="submitLogin()"
+                    >Login</button>
+        </form>
+        <script>
+            function submitLogin() {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                
+                if (!email || !password) {
+                    document.getElementById('message').innerHTML = '<span class="text-red-500">Email and password are required</span>';
+                    return;
+                }
+                
+                const data = {
+                    email: email,
+                    password: password
+                };
+                
+                fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    console.log("Login response status:", response.status);
+                    if (response.ok) {
+                        return response.text();
+                    } else {
+                        throw new Error('Login failed: ' + response.statusText);
+                    }
+                })
+                .then(token => {
+                    console.log("Received token from server:", token.substring(0, 15) + "...");
+                    const saved = saveToken(token);
+                    
+                    if (saved) {
+                        document.getElementById('message').innerHTML = '<span class="text-green-500">Login successful!</span>';
+                        
+                        // Test the token immediately with a direct fetch
+                        console.log("Testing token with a direct fetch request");
+                        
+                        // Debug token content
+                        try {
+                            if (token && token.split) {
+                                const parts = token.split('.');
+                                if (parts.length === 3) {
+                                    const header = JSON.parse(atob(parts[0]));
+                                    const payload = JSON.parse(atob(parts[1]));
+                                    console.log("Token header:", header);
+                                    console.log("Token payload:", payload);
+                                    console.log("Token expiration:", new Date(payload.exp * 1000).toLocaleString());
+                                } else {
+                                    console.warn("Token doesn't appear to be valid JWT format (not 3 parts)");
+                                }
+                            } else {
+                                console.warn("Token is not a string or empty:", token);
+                            }
+                        } catch (e) {
+                            console.error("Error parsing token:", e);
+                        }
+                        
+                        fetch('/games/data', {
+                            headers: {
+                                'Authorization': 'Bearer ' + token
+                            }
+                        })
+                        .then(response => {
+                            console.log("Test request status:", response.status);
+                            if (response.ok) {
+                                console.log("Token authentication works!");
+                                document.getElementById('message').innerHTML += '<br><span class="text-green-500">Token verified. Redirecting...</span>';
+                                
+                                // If token works, redirect
+                                setTimeout(() => {
+                                    window.location.href = '/ui/games';
+                                }, 1000);
+                            } else {
+                                console.error("Token authentication failed!");
+                                document.getElementById('message').innerHTML += '<br><span class="text-yellow-500">Token was saved but authentication failed. Please try again.</span>';
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Token test error:", error);
+                            document.getElementById('message').innerHTML += '<br><span class="text-yellow-500">Error testing token: ' + error.message + '</span>';
+                        });
+                    } else {
+                        document.getElementById('message').innerHTML = 
+                            '<span class="text-yellow-500">Login successful, but unable to save session data. ' +
+                            'Please enable cookies and local storage in your browser settings.</span>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('message').innerHTML = '<span class="text-red-500">' + error.message + '</span>';
+                    console.error('Error:', error);
+                });
+            }
+        </script>
+    </div>
+
+    <div id="register-form" class="mt-6" style="display: none;">
+        <h2 class="text-xl font-semibold text-gray-700">Create Account</h2>
+        <form id="register-form-elem" class="space-y-4" onsubmit="event.preventDefault();">
+            <input type="text" id="register-name" name="displayname" placeholder="Display Name" required class="w-full px-3 py-2 border rounded-md" />
+            <input type="email" id="register-email" name="email" placeholder="Email" required class="w-full px-3 py-2 border rounded-md" />
+            <input type="password" id="register-password" name="password" placeholder="Password" required class="w-full px-3 py-2 border rounded-md" />
+            <button type="submit" class="w-full bg-green-500 text-white py-2 rounded-md" 
+                    onclick="submitRegister()">Create Account</button>
+        </form>
+        <script>
+            function submitRegister() {
+                const name = document.getElementById('register-name').value;
+                const email = document.getElementById('register-email').value;
+                const password = document.getElementById('register-password').value;
+                
+                if (!name || !email || !password) {
+                    document.getElementById('message').innerHTML = '<span class="text-red-500">All fields are required</span>';
+                    return;
+                }
+                
+                const data = {
+                    name: name, 
+                    email: email,
+                    password: password
+                };
+                
+                fetch('/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Registration failed: ' + response.statusText);
+                    }
+                })
+                .then(data => {
+                    // After registration, try to log in automatically
+                    document.getElementById('message').innerHTML = '<span class="text-green-500">Account created successfully! Logging in...</span>';
+                    
+                    // For registration, the server returns a user object with a token field
+                    if (data && data.token) {
+                        saveToken(data.token);
+                        document.getElementById('message').innerHTML = '<span class="text-green-500">Account created successfully! Redirecting...</span>';
+                        // Redirect to games page after successful registration
+                        setTimeout(() => {
+                            window.location.href = '/ui/games';
+                        }, 1000);
+                    } else {
+                        // If no token in the registration response, we can just redirect to login
+                        document.getElementById('login-email').value = email;
+                        document.getElementById('login-form').style.display = 'block';
+                        document.getElementById('register-form').style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('message').innerHTML = '<span class="text-red-500">' + error.message + '</span>';
+                    console.error('Error:', error);
+                });
+            }
+        </script>
+    </div>
+
+    <div id="message" class="mt-4 text-center text-red-500"></div>
+    
+    <div class="mt-6 text-center text-sm text-gray-500">
+        <a href="/debug-info" target="_blank" class="text-blue-500 hover:underline">Diagnostic Info</a>
+    </div>
+</div>
+</div>
+</body>
+</html>

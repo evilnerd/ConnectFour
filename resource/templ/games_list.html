@@ -1,0 +1,88 @@
+{{if .}}
+<style>
+    .status-started {
+        color: #3498db;
+        font-weight: bold;
+    }
+    .status-completed {
+        color: #2ecc71;
+        font-weight: bold;
+    }
+    .status-cancelled {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+    .details-button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .details-button:hover {
+        background-color: #2980b9;
+    }
+</style>
+
+<table class="w-full border-collapse">
+    <thead>
+        <tr class="bg-gray-200">
+            <th class="text-left py-2 px-3 border-b-2 border-gray-300">Game Key</th>
+            <th class="text-left py-2 px-3 border-b-2 border-gray-300">Created At</th>
+            <th class="text-left py-2 px-3 border-b-2 border-gray-300">Created By</th>
+            <th class="text-left py-2 px-3 border-b-2 border-gray-300">Status</th>
+            <th class="text-left py-2 px-3 border-b-2 border-gray-300">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr class="hover:bg-gray-100">
+            <td class="py-2 px-3 border-b border-gray-200">{{.Key}}</td>
+            <td class="py-2 px-3 border-b border-gray-200">{{.CreatedAt | formatDate}}</td>
+            <td class="py-2 px-3 border-b border-gray-200">{{.CreatedBy}}</td>
+            <td class="py-2 px-3 border-b border-gray-200">
+                <span class="status-{{.Status}}">{{.Status}}</span>
+            </td>
+            <td class="py-2 px-3 border-b border-gray-200">
+                <button class="details-button" onclick="location.href='/games/details/{{.Key}}'">View Details</button>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+
+<!-- Signal to the parent page that games exist -->
+<script>
+    // Tell the parent page we have games
+    htmx.trigger(document.body, 'hasGames', {detail: true});
+</script>
+{{else}}
+<div class="text-center py-10 px-4">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <h3 class="text-lg font-medium text-gray-800 mb-2">No Games Yet</h3>
+    <p class="text-gray-500 mb-6">You haven't started any games yet. Click the button below to start your first game!</p>
+    <button class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors shadow-sm"
+            hx-post="/games"
+            hx-headers='{"Content-Type": "application/json"}'
+            hx-ext="jwt-auth"
+            hx-swap="none"
+            hx-vals='{"public": true}'
+            hx-on::after-request="htmx.trigger('#game-list', 'refresh-games')">
+        Start Your First Game
+    </button>
+</div>
+
+<!-- Signal to the parent page that no games exist -->
+<script>
+    // Tell the parent page we have no games
+    htmx.trigger(document.body, 'hasGames', {detail: false});
+</script>
+{{end}}

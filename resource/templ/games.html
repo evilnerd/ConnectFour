@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Four - My Games</title>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/ui/js/common.js" onerror="console.error('Failed to load common.js from /ui/js/common.js')"></script>
+    <script>
+        // Fallback in case common.js doesn't load
+        if (typeof saveToken !== 'function') {
+            console.error("common.js did not load properly - using inline fallback functions");
+            
+            // Basic fallback functions
+            function saveToken(token) {
+                console.log("Inline fallback: Saving token to localStorage");
+                try {
+                    localStorage.setItem('jwtToken', token);
+                    return true;
+                } catch (e) {
+                    console.error("Inline fallback: Error saving token", e);
+                    return false;
+                }
+            }
+            
+            function getToken() {
+                try {
+                    return localStorage.getItem('jwtToken');
+                } catch (e) {
+                    return null;
+                }
+            }
+            
+            function clearToken() {
+                try {
+                    localStorage.removeItem('jwtToken');
+                } catch (e) {}
+            }
+            
+            function isLoggedIn() {
+                return !!getToken();
+            }
+            
+            function logout() {
+                clearToken();
+                window.location.href = '/ui';
+            }
+            
+            // Define HTMX extension
+            if (typeof htmx !== 'undefined') {
+                htmx.defineExtension('jwt-auth', {
+                    onEvent: function(name, evt) {
+                        if (name === 'htmx:configRequest') {
+                            const token = getToken();
+                            if (token) {
+                                evt.detail.headers['Authorization'] = 'Bearer ' + token;
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+    <script>
+        // Check for login status when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Games page loaded");
+            
+            // Check if the HTMX extension was registered
+            if (htmx.extensions && htmx.extensions['jwt-auth']) {
+                console.log("JWT-auth HTMX extension is properly registered");
+            } else {
+                console.error("JWT-auth HTMX extension is NOT registered!");
+                
+                // Try to register it now if it wasn't done by common.js
+                if (typeof getToken === 'function') {
+                    console.log("Attempting to register jwt-auth extension manually");
+                    htmx.defineExtension('jwt-auth', {
+                        onEvent: function(name, evt) {
+                            if (name === 'htmx:configRequest') {
+                                const token = getToken();
+                                if (token) {
+                                    console.log("Manually adding Authorization header to request:", evt.detail.path);
+                                    evt.detail.headers['Authorization'] = 'Bearer ' + token;
+                                } else {
+                                    console.log("No token available for request (manual check):", evt.detail.path);
+                                }
+                            }
+                        }
+                    });
+                    console.log("jwt-auth extension manually registered");
+                }
+            }
+            
+            // Test localStorage directly
+            try {
+                localStorage.setItem('test', 'test-value');
+                const testValue = localStorage.getItem('test');
+                console.log("localStorage test result:", testValue === 'test-value');
+                localStorage.removeItem('test');
+            } catch (e) {
+                console.error("localStorage test failed:", e);
+            }
+            
+            // Check token manually
+            const token = getToken();
+            console.log("Token directly checked on page load:", token ? "present" : "missing");
+            
+            if (!isLoggedIn()) {
+                // If not logged in, redirect to login page
+                console.log("Not logged in, redirecting to login page");
+                window.location.href = '/';
+            } else {
+                console.log("User is logged in, triggering game list refresh");
+                // Trigger a refresh of the games list
+                htmx.trigger('#game-list', 'refresh-games');
+            }
+        });
+
+        // Using the logout function from common.js
+    </script>
+    <style>
+        .status-started {
+            color: #3498db;
+            font-weight: bold;
+        }
+        .status-completed {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+        .status-cancelled {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .details-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .details-button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col" hx-ext="jwt-auth">
+<!-- Navigation Bar -->
+<div id="navigation-placeholder">
+    {{template "navigation.html" .}}
+</div>
+
+<div class="flex-grow flex items-center justify-center py-8">
+<div class="w-full max-w-4xl bg-white shadow-lg rounded-lg p-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-800">Connect Four</h1>
+    </div>
+
+    <div id="welcome-message" class="mt-4 text-center text-green-600 font-semibold">
+        These are the games you are playing, or have played.
+    </div>
+
+    <h2 class="text-xl font-semibold text-gray-700 mt-6 mb-4">My Games</h2>
+    <div id="game-list" class="mt-4 p-4 border rounded-md bg-gray-50"
+         hx-get="/games/my"
+         hx-trigger="load, refresh-games from:body"
+         hx-target="this"
+         hx-ext="jwt-auth">
+        <p class="text-center text-gray-500">Loading games...</p>
+    </div>
+
+    <div id="test-auth-result" class="mt-4 text-center text-red-500"></div>
+    <div class="mt-2 text-center">
+        <button id="test-auth-btn" class="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+            Test Authorization
+        </button>
+    </div>
+    
+    <script>
+        // Add a function to test the Authorization header
+        document.getElementById('test-auth-btn').addEventListener('click', function() {
+            const token = getToken();
+            const resultDiv = document.getElementById('test-auth-result');
+            
+            if (!token) {
+                resultDiv.innerText = "No token found in storage!";
+                resultDiv.className = "mt-4 text-center text-red-500";
+                return;
+            }
+            
+            resultDiv.innerText = "Testing authorization...";
+            
+            // Make a test request with the token
+            fetch('/games/my', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    resultDiv.innerText = "Auth test successful! Token is valid.";
+                    resultDiv.className = "mt-4 text-center text-green-500";
+                } else {
+                    resultDiv.innerText = "Auth test failed! Status: " + response.status;
+                    resultDiv.className = "mt-4 text-center text-red-500";
+                }
+            })
+            .catch(error => {
+                resultDiv.innerText = "Auth test error: " + error.message;
+                resultDiv.className = "mt-4 text-center text-red-500";
+            });
+        });
+    </script>
+
+    <div id="new-game-btn" class="mt-6 text-center" style="display: none;">
+        <button class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors" 
+                hx-post="/games"
+                hx-headers='{"Content-Type": "application/json"}'
+                hx-ext="jwt-auth"
+                hx-swap="none"
+                hx-vals='{"public": true}'
+                hx-on::after-request="htmx.trigger('#game-list', 'refresh-games')">
+            New Game
+        </button>
+    </div>
+    
+    <script>
+        // Listen for the HTMX event from the games list
+        document.body.addEventListener('hasGames', function(event) {
+            const hasGames = event.detail;
+            const newGameBtn = document.getElementById('new-game-btn');
+            
+            if (hasGames) {
+                // Show the "New Game" button if games exist
+                newGameBtn.style.display = 'block';
+            } else {
+                // Hide the button if no games (the empty state has its own button)
+                newGameBtn.style.display = 'none';
+            }
+        });
+        
+        // Debug: Monitor all HTMX requests to check for auth headers
+        document.body.addEventListener('htmx:configRequest', function(event) {
+            console.log("HTMX request being configured:", event.detail.path);
+            console.log("Request headers:", event.detail.headers);
+            
+            // Check if Authorization header is present
+            if (event.detail.headers['Authorization']) {
+                console.log("Auth header is present:", 
+                    event.detail.headers['Authorization'].substring(0, 15) + "...");
+            } else {
+                console.error("Auth header is MISSING for request to:", event.detail.path);
+                
+                // Try to add it manually if token exists
+                const token = getToken();
+                if (token) {
+                    console.log("Token exists but wasn't added to headers. Adding now.");
+                    event.detail.headers['Authorization'] = 'Bearer ' + token;
+                } else {
+                    console.error("No token available in storage.");
+                }
+            }
+        });
+        
+        // Also handle the case when the HTMX request is in progress
+        document.body.addEventListener('htmx:beforeRequest', function(event) {
+            if (event.detail.elt.id === 'game-list') {
+                // Hide the button during loading
+                document.getElementById('new-game-btn').style.display = 'none';
+            }
+        });
+    </script>
+</div>
+</div>
+</body>
+</html>

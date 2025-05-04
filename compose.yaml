@@ -7,7 +7,6 @@ secrets:
 volumes:
   data:
 
-
 services:
   server:
     build:

@@ -1,0 +1,60 @@
+<!-- Navigation Bar -->
+<nav class="bg-gray-800 text-white shadow-md">
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center py-3">
+            <div class="flex items-center space-x-4">
+                <a href="/ui" class="text-xl font-bold">Connect Four</a>
+                <a href="/ui/games" class="hover:text-blue-300 transition-colors">My Games</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="user-email" class="hidden md:inline-block"></span>
+                <button id="nav-logout-button" onclick="logout()" class="px-3 py-1 bg-red-500 hover:bg-red-600 rounded-md transition-colors">
+                    Logout
+                </button>
+                <button id="nav-login-button" onclick="window.location.href='/ui'" class="px-3 py-1 bg-blue-500 hover:bg-blue-600 rounded-md transition-colors" style="display: none;">
+                    Login
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script>
+    // Update navigation UI based on login status
+    function updateNavUI() {
+        const logoutBtn = document.getElementById('nav-logout-button');
+        const loginBtn = document.getElementById('nav-login-button');
+        const userEmail = document.getElementById('user-email');
+        
+        if (isLoggedIn()) {
+            logoutBtn.style.display = 'block';
+            loginBtn.style.display = 'none';
+            
+            // Try to show user info if available from token
+            try {
+                const token = getToken();
+                if (token) {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1]));
+                        if (payload && payload.email) {
+                            userEmail.textContent = payload.email;
+                            userEmail.style.display = 'inline-block';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Error parsing token:', e);
+            }
+        } else {
+            logoutBtn.style.display = 'none';
+            loginBtn.style.display = 'block';
+            userEmail.style.display = 'none';
+        }
+    }
+    
+    // Add a function to update nav when the document loads
+    document.addEventListener('DOMContentLoaded', function() {
+        updateNavUI();
+    });
+</script>
