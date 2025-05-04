@@ -61,11 +61,18 @@ func (s GamesService) AllOpenGames(email string) []NewGameResponse {
 }
 
 func (s GamesService) AllMyGames(email string) []NewGameResponse {
+	log.Debug("Listing all games for user %s", email)
 	user, err := s.userService.FindUserByEmail(email)
 	if err != nil {
 		log.Errorf("Error finding user by email '%s': %v", email, err)
 		return []NewGameResponse{}
 	}
+
+	if email == "" || user.Empty() {
+		log.Errorf("No active user.")
+		return []NewGameResponse{}
+	}
+
 	output := make([]NewGameResponse, 0)
 	games, err := s.gameRepository.List(user.Id, "")
 	if err != nil {

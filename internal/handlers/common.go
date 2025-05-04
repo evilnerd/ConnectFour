@@ -72,8 +72,11 @@ func errorResponse(w http.ResponseWriter, message string, httpStatusCode int) {
 func JwtValidation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
+		log.Debugf("Auth header: %s", auth)
+
 		tokenString, found := strings.CutPrefix(auth, "Bearer ")
 		if !found || tokenString == "" {
+			log.Warnf("No bearer token found in request to: %s", r.URL.Path)
 			errorResponse(w, "No bearer token found", http.StatusUnauthorized)
 			return
 		}
@@ -83,6 +86,7 @@ func JwtValidation(next http.Handler) http.Handler {
 		})
 
 		if err != nil {
+			log.Warnf("Invalid bearer token for request to %s: %v", r.URL.Path, err)
 			errorResponse(w, "Invalid bearer token", http.StatusUnauthorized)
 			return
 		}
@@ -90,21 +94,26 @@ func JwtValidation(next http.Handler) http.Handler {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 			exp, ok := claims["exp"].(float64)
 			if !ok {
+				log.Warnf("Invalid expiration time in token for request to %s", r.URL.Path)
 				errorResponse(w, "Invalid expiration time", http.StatusUnauthorized)
 				return
 			}
 			if expired(exp) {
+				log.Warnf("Token expired for request to %s", r.URL.Path)
 				errorResponse(w, "Token is expired", http.StatusUnauthorized)
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), "email", claims["email"])
+			// Valid token, proceed
+			email := claims["email"].(string)
+			log.Debugf("Valid JWT for user %s, accessing %s", email, r.URL.Path)
+			ctx := context.WithValue(r.Context(), "email", email)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		} else {
+			log.Warnf("Invalid token claims for request to %s", r.URL.Path)
 			errorResponse(w, "Invalid token", http.StatusUnauthorized)
 		}
 	})
-
 }
 
 func expired(exp float64) bool {

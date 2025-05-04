@@ -4,6 +4,8 @@ import (
 	"connectfour/internal/db"
 	"connectfour/internal/model"
 	"errors"
+	"fmt"
+	log "github.com/sirupsen/logrus"
 	"net/mail"
 	"strings"
 	"time"
@@ -12,6 +14,18 @@ import (
 type UserService struct {
 	repo      db.UserRepository
 	userCache *Cache[string, *model.User]
+}
+
+type UserExistsError struct {
+	email string
+}
+
+func (e UserExistsError) Error() string {
+	return fmt.Sprintf("user with email %s already exists", e.email)
+}
+
+func NewUserExistsError(email string) UserExistsError {
+	return UserExistsError{email: email}
 }
 
 func NewUserService(repo db.UserRepository, cacheTtl time.Duration) *UserService {
@@ -44,19 +58,32 @@ func (s UserService) FindUserByEmail(email string) (model.User, error) {
 
 func (s UserService) CreateUser(email string, name string, token string) (model.User, error) {
 
+	log.Debugf("Creating user %s (%s)...", name, email)
+	email = strings.ToLower(email)
 	if !validateEmail(email) {
 		return model.User{}, errors.New("invalid email address")
 	}
 
-	user := model.User{
+	user, err := s.FindUserByEmail(email)
+	if err != nil {
+		log.Errorf("Could not determine if user %s already exists: %v", email, err)
+		return model.User{}, fmt.Errorf("could not determine if the user already exists")
+	}
+	if !user.Empty() {
+		return model.User{}, NewUserExistsError(email)
+	}
+
+	user = model.User{
 		Name:  name,
-		Email: email,
+		Email: strings.ToLower(email),
 		Token: token,
 	}
-	user, err := s.repo.Create(user)
+	user, err = s.repo.Create(user)
 	if err != nil {
+		log.Errorf("Error creating user %s (%s): %v", name, email, err)
 		return model.User{}, err
 	}
+	log.Debugf("Succeeded creating user %s (%s)...", name, email)
 	return user, nil
 }
 
