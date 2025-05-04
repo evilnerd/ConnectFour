@@ -8,6 +8,7 @@ import (
 var (
 	player1 = NewUser("Sanae", "sanae@evilnerd.nl")
 	player2 = NewUser("Dick", "dick@evilnerd.nl")
+	player3 = NewUser("Lucy", "lucy@evilnerd.nl")
 )
 
 func TestGame_Join_OkIfStateIsCreated(t *testing.T) {
@@ -24,9 +25,11 @@ func TestGame_Join_OkIfStateIsCreated(t *testing.T) {
 func TestGame_Join_NotOkIfStateBeyondCreated(t *testing.T) {
 	// Arrange
 	game := NewGame(player1, true)
+	_ = game.Join(player2)
 	game.Status = Started
+
 	// Act
-	err := game.Join(player2)
+	err := game.Join(player3)
 	// Assert
 	assert.Error(t, err, "Expected to get an error when joining a game that has already started")
 }
