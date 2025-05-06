@@ -13,6 +13,18 @@ import (
 
 var secretKey = []byte("connectfour is the ultimate game")
 
+// LoginHandler godoc
+// @Summary User login
+// @Description Authenticates a user and returns a JWT token
+// @Tags authentication
+// @Accept json
+// @Produce plain
+// @Param login body service.LoginRequest true "Login credentials"
+// @Success 200 {string} string "JWT Token"
+// @Failure 400 {object} service.ErrorResponse "Invalid request format"
+// @Failure 401 {string} string "Invalid credentials"
+// @Failure 500 {object} service.ErrorResponse "Internal server error"
+// @Router /login [post]
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req service.LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -44,6 +56,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// RegisterHandler godoc
+// @Summary User registration
+// @Description Registers a new user account
+// @Tags authentication
+// @Accept json
+// @Produce json
+// @Param register body service.RegisterRequest true "User registration details"
+// @Success 201 {object} service.CreateUserResponse "User successfully registered"
+// @Failure 400 {object} service.ErrorResponse "Invalid request format"
+// @Failure 409 {object} service.ErrorResponse "User already exists"
+// @Failure 500 {object} service.ErrorResponse "Internal server error"
+// @Router /register [post]
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var req service.RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&req)

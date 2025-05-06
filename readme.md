@@ -78,6 +78,9 @@ The server exposes a RESTful API with these endpoints:
     - POST `/games/{key}/join`: Join an existing game
     - POST `/games/{key}/play`: Make a move in a game
 
+For more information about these endpoints and how to update the API docs, view the [Swagger/OpenAPI docs](swagger_README.md).
+
+
 ## Deployment
 
 The project uses Docker Compose for deployment with:
