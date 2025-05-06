@@ -152,6 +152,8 @@ func (b *Board) Render() string {
 	return sb.String()
 }
 
+// Map returns the board as a map of int/string where the key is the row (1-6) and the string contains a character
+// for each column, depicting either empty (' '/space), red ('X'), or yellow ('O').
 func (b *Board) Map() map[int]string {
 	output := make(map[int]string)
 	for row := 0; row < BoardHeight; row++ {

@@ -1,0 +1,602 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "API for the ConnectFour online game service",
+        "title": "ConnectFour API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "ConnectFour Support",
+            "url": "http://www.example.com/support",
+            "email": "support@example.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8443",
+    "basePath": "/",
+    "paths": {
+        "/": {
+            "get": {
+                "description": "Returns a greeting message to confirm the server is running",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "general"
+                ],
+                "summary": "Server greeting endpoint",
+                "responses": {
+                    "200": {
+                        "description": "Let's play a game.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/games": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a list of public games that are open to join",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "List open games",
+                "responses": {
+                    "200": {
+                        "description": "List of open games",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/service.GameStateResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new game with the authenticated user as player 1",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "Create new game",
+                "parameters": [
+                    {
+                        "description": "Game options",
+                        "name": "game",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.NewGameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Game created",
+                        "schema": {
+                            "$ref": "#/definitions/service.GameStateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/games/my": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a list of games where the authenticated user is a player",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "List my games",
+                "responses": {
+                    "200": {
+                        "description": "List of user's games",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/service.GameStateResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/games/{key}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the current state of a specific game",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "Get game state",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Game state",
+                        "schema": {
+                            "$ref": "#/definitions/service.GameStateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid game key",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game not found",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/games/{key}/join": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows the authenticated user to join a game as player 2",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "Join a game",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully joined the game",
+                        "schema": {
+                            "$ref": "#/definitions/service.GameStateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Game is already full or not in a joinable state",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game not found",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/games/{key}/play": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows the current player to make a move in a game the player is part of.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "Play a move",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Move details",
+                        "name": "move",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.PlayMoveRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Move successfully played",
+                        "schema": {
+                            "$ref": "#/definitions/service.GameStateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid move or not player's turn",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game not found",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "description": "Authenticates a user and returns a JWT token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "authentication"
+                ],
+                "summary": "User login",
+                "parameters": [
+                    {
+                        "description": "Login credentials",
+                        "name": "login",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "JWT Token",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/register": {
+            "post": {
+                "description": "Registers a new user account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication"
+                ],
+                "summary": "User registration",
+                "parameters": [
+                    {
+                        "description": "User registration details",
+                        "name": "register",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "User successfully registered",
+                        "schema": {
+                            "$ref": "#/definitions/service.CreateUserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "User already exists",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/service.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.GameStatus": {
+            "type": "string",
+            "enum": [
+                "created",
+                "started",
+                "finished",
+                "aborted",
+                "unknown"
+            ],
+            "x-enum-comments": {
+                "Unknown": "used in the client to indicate the status should be fetched."
+            },
+            "x-enum-varnames": [
+                "Created",
+                "Started",
+                "Finished",
+                "Aborted",
+                "Unknown"
+            ]
+        },
+        "service.CreateUserResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "description": "User's email address\nexample: player1@example.com",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "User's display name\nexample: Player1",
+                    "type": "string"
+                }
+            }
+        },
+        "service.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "description": "Error message\nexample: Game not found",
+                    "type": "string"
+                }
+            }
+        },
+        "service.GameStateResponse": {
+            "type": "object",
+            "properties": {
+                "board": {
+                    "description": "Game board representation\nexample: {\n\t\t\t \t\"1\": \"       \",\n\t\t\t \t\"2\": \"       \",\n\t\t\t \t\"3\": \"X  O   \",\n\t\t\t \t\"4\": \"X OX  O\",\n\t\t     \t\"5\": \"XOXOOOX\",\n\t\t     \t\"6\": \"XOXOXOX\"\n\t\t    }",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "key": {
+                    "description": "Unique identifier for the game\nexample: three-word-key",
+                    "type": "string"
+                },
+                "player1_email": {
+                    "description": "Email of player 1\nexample: player1@example.com",
+                    "type": "string"
+                },
+                "player1_name": {
+                    "description": "Name of player 1\nexample: Player1",
+                    "type": "string"
+                },
+                "player2_email": {
+                    "description": "Email of player 2\nexample: player2@example.com",
+                    "type": "string"
+                },
+                "player2_name": {
+                    "description": "Name of player 2\nexample: Player2",
+                    "type": "string"
+                },
+                "player_turn": {
+                    "description": "Player whose turn it is (1 or 2)\nexample: 1",
+                    "type": "integer"
+                },
+                "player_turn_email": {
+                    "description": "Email of the player whose turn it is\nexample: player1@example.com",
+                    "type": "string"
+                },
+                "player_turn_name": {
+                    "description": "Name of the player whose turn it is\nexample: Player1",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Current status of the game\nexample: started\nallowed:",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.GameStatus"
+                        }
+                    ]
+                }
+            }
+        },
+        "service.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "description": "User's email address\nRequired: true\nexample: player@example.com",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "User's password\nRequired: true\nexample: password123",
+                    "type": "string"
+                }
+            }
+        },
+        "service.NewGameRequest": {
+            "type": "object",
+            "properties": {
+                "public": {
+                    "description": "Whether the game should be public or private\nexample: true",
+                    "type": "boolean"
+                }
+            }
+        },
+        "service.PlayMoveRequest": {
+            "type": "object",
+            "properties": {
+                "column": {
+                    "description": "Column where the player wants to place their disc (0-indexed)\nRequired: true\nminimum: 0\nmaximum: 6\nexample: 3",
+                    "type": "integer"
+                }
+            }
+        },
+        "service.RegisterRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "description": "User's email address\nRequired: true\nexample: player@example.com",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "User's display name\nRequired: true\nexample: Player1",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "User's password\nRequired: true\nexample: password123",
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}
