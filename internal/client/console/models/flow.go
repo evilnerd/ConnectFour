@@ -60,6 +60,7 @@ var (
 func CreateModels(key string, storeInFile bool) *MainModel {
 	args := []backend.WebClientOption{
 		backend.WithBaseUrl(backend.ServerUrl),
+		backend.WithKeyring(storeInFile),
 		backend.WithStoreInFile(storeInFile, backend.JwtFileName()),
 		backend.WithReAuthCallback(func() {
 			ReAuthenticate(state)

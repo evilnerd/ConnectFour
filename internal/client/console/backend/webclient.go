@@ -17,14 +17,15 @@ import (
 )
 
 type WebClient struct {
-	jwt            []byte
-	isValid        bool
-	reAuthCallback func()
-	baseUrl        string
-	jwtFilePath    string
-	hasFilePath    bool
-	storeInFile    bool
-	exp            float64
+	jwt             []byte
+	isValid         bool
+	reAuthCallback  func()
+	baseUrl         string
+	jwtFilePath     string
+	hasFilePath     bool
+	storeInFile     bool
+	storeInKeyring  bool
+	exp             float64
 }
 
 type WebClientOption func(*WebClient) error
@@ -66,6 +67,31 @@ func WithStoreInFile(enabled bool, path string) WebClientOption {
 		client.storeInFile = enabled
 		if enabled && client.jwt == nil {
 			return client.loadFromFile(path)
+		}
+		return nil
+	}
+}
+
+// WithKeyring specifies that the OS keyring should be used to store and retrieve the JWT when `enabled` is true.
+// If the keyring is unavailable (e.g. headless Linux without a running keyring daemon), the call is a no-op and
+// credential storage falls back to the file configured via WithStoreInFile.
+func WithKeyring(enabled bool) WebClientOption {
+	return func(client *WebClient) error {
+		client.storeInKeyring = enabled
+		if !enabled || client.jwt != nil {
+			return nil
+		}
+		token, err := loadFromKeyring()
+		if err != nil {
+			log.Printf("Keyring unavailable, will fall back to file storage: %v", err)
+			return nil
+		}
+		client.jwt = []byte(token)
+		var name, email string
+		name, email, client.exp = client.Identify()
+		if strings.TrimSpace(name) != "" && strings.TrimSpace(email) != "" {
+			client.isValid = true
+			log.Printf("Loaded credentials from keyring, logged in as %s", email)
 		}
 		return nil
 	}
@@ -118,7 +144,7 @@ func (wc *WebClient) loadFromFile(path string) error {
 
 func (wc *WebClient) writeJwtToFile() {
 	log.Printf("Writing jwt to file for user to location '%s'\n", JwtFileName())
-	err := os.WriteFile(JwtFileName(), wc.jwt, 0666)
+	err := os.WriteFile(JwtFileName(), wc.jwt, 0600)
 	if err != nil {
 		log.Printf("ERROR: Could not write jwt to file: %v", err)
 		tea.Println("The login credentials could not be written to file.")
@@ -133,6 +159,25 @@ func (wc *WebClient) removeJwtFile() {
 		log.Println("Disabling storage of the JWT file for now.")
 		wc.isValid = false
 		wc.storeInFile = false
+	}
+}
+
+// persistJwt saves the current JWT to the keyring when available, falling back to the configured file.
+// When saving to the keyring succeeds, any existing JWT file is removed to avoid redundant storage.
+func (wc *WebClient) persistJwt() {
+	if wc.storeInKeyring {
+		if err := saveToKeyring(string(wc.jwt)); err == nil {
+			log.Printf("Credentials saved to keyring")
+			if wc.hasFilePath {
+				_ = os.Remove(wc.jwtFilePath)
+			}
+			return
+		} else {
+			log.Printf("Could not save to keyring: %v (falling back to file)", err)
+		}
+	}
+	if wc.hasFilePath && wc.storeInFile {
+		wc.writeJwtToFile()
 	}
 }
 
@@ -187,9 +232,7 @@ func (wc *WebClient) CallLogin(url string, body any) error {
 	}
 
 	wc.isValid = true
-	if wc.hasFilePath && wc.storeInFile {
-		wc.writeJwtToFile()
-	}
+	wc.persistJwt()
 
 	return nil
 
@@ -245,13 +288,18 @@ func (wc *WebClient) CallWithBody(method string, url string, body any, output an
 
 // region Validity
 
-// reAuth removes the current JWT information (also from disk) and calls the 'reAuthCallback' to indicate that the
-// app should ask the user for their credentials.
+// reAuth removes the current JWT information (from keyring and/or disk) and calls the 'reAuthCallback' to indicate
+// that the app should ask the user for their credentials.
 func (wc *WebClient) reAuth() {
 	log.Printf("The login credentials were invalid and re-authentication is required.")
 	wc.jwt = nil
 	wc.isValid = false
 	wc.exp = 0
+	if wc.storeInKeyring {
+		if err := removeFromKeyring(); err != nil {
+			log.Printf("Could not remove credentials from keyring: %v", err)
+		}
+	}
 	if wc.storeInFile {
 		wc.removeJwtFile()
 	}
